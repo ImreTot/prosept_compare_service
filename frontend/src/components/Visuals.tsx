@@ -1,18 +1,30 @@
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Button } from "./ui/button"
+
 const Visuals = () => {
   return (
-    // <div className="flex flex-col flex-1 justify-between p-2">
     <div className="flex-1 p-2">
-      <div className="border border-red-400 h-40">
-        <h2 className="text-center">Дилер</h2>
-        <p>Сима ленд</p>
-        <p>360р</p>
-        <p>Удалитель ржавчины</p>
+      <h2 className="text-center font-bold text-xl my-4">Дилер</h2>
+      <div className="h-40 gap-4 grid">
+        <Card className="">
+          <CardHeader>
+            <CardTitle>Сима ленд</CardTitle>
+            <CardDescription>Удалитель ржавчины, 360p</CardDescription>
+          </CardHeader>
+          <CardContent>
+          </CardContent>
+          <CardFooter className="flex justify-end">
+            <Button>Cопоставить</Button>
+          </CardFooter>
+        </Card>
       </div>
-      {/* <div className="flex items-center justify-evenly"> */}
-      {/* <button type="button" aria-label="да">Да</button> */}
-      {/* <button type="button" aria-label="нет">Нет</button> */}
-      {/* <button type="button" aria-label="отложить">Отложить</button> */}
-      {/* </div> */}
     </div>
   )
 }
