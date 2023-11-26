@@ -1,7 +1,7 @@
 const TheFooter = () => {
   return (
     <footer className="container mx-auto">
-      <div className="border">
+      <div className="">
         &copy; copyright
       </div>
     </footer >

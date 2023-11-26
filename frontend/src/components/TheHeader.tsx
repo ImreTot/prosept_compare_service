@@ -10,7 +10,7 @@ import {
 const TheHeader = () => {
   return (
     <header className="container mx-auto">
-      <div className="border flex justify-between items-center">
+      <div className="flex justify-between items-center">
         <h1>PROSEPT</h1>
         <DropdownMenu>
           <DropdownMenuTrigger>Open</DropdownMenuTrigger>
