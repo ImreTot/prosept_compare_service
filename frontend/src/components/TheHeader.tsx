@@ -7,13 +7,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import { AlignJustify } from 'lucide-react';
+
+
 const TheHeader = () => {
   return (
     <header className="container mx-auto">
-      <div className="flex justify-between items-center">
-        <h1>PROSEPT</h1>
+      <div className="flex justify-between items-center py-4">
+        <h1 className="text-2xl font-bold">Prospert</h1>
         <DropdownMenu>
-          <DropdownMenuTrigger>Open</DropdownMenuTrigger>
+          <DropdownMenuTrigger>
+            <AlignJustify />
+          </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
