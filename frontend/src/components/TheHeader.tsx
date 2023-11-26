@@ -14,7 +14,7 @@ const TheHeader = () => {
   return (
     <header className="container mx-auto">
       <div className="flex justify-between items-center py-4">
-        <h1 className="text-2xl font-bold">Prospert</h1>
+        <h1 className="text-2xl font-bold">Prosept</h1>
         <DropdownMenu>
           <DropdownMenuTrigger>
             <AlignJustify />

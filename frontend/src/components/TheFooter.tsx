@@ -2,7 +2,7 @@ const TheFooter = () => {
   return (
     <footer className="container mx-auto">
       <div className="">
-        &copy; copyright
+        &copy;2023 Prosept
       </div>
     </footer >
   )
