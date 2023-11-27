@@ -1,26 +1,16 @@
-import os
 from typing import List
-
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from models import MarkupRequest, Product, ProductDealerKey, get_db
+from models import MarkupRequest, Product, Recommendation, ProductData, ProductDealerKey, get_db
 
 # Создание экземпляра FastAPI
 app = FastAPI()
 
 # Загрузка переменных окружения из файла .env
 load_dotenv()
-
-# Получение значений переменных окружения
-user = os.getenv("POSTGRES_USER")
-password = os.getenv("POSTGRES_PASSWORD")
-dbname = os.getenv("POSTGRES_DB")
-host = os.getenv("DB_HOST")
-port = os.getenv("DB_PORT")
-
 
 # API-маршруты
 
@@ -118,3 +108,20 @@ def view_markup(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     # Реализация логики просмотра разметки
     return db.query(Product).filter(
         Product.product_dealer_keys.any()).offset(skip).limit(limit).all()
+
+# Загрузка данных
+@app.post("/load-data/")
+def load_data(data: List[ProductData], db: Session = Depends(get_db)):
+    for product_data in data:
+        db_product = Product(**product_data.dict())
+        db.add(db_product)
+    db.commit()
+    return {"message": "Data loaded successfully"}
+
+# Получение рекомендаций
+@app.post("/get-recommendations/")
+def get_recommendations(request: MarkupRequest, db: Session = Depends(get_db)):
+    # Логика использования ML-модели для получения рекомендаций
+    # ...
+
+    return Recommendation(product_id=request.product_id, recommended_ids=[1, 2, 3])
