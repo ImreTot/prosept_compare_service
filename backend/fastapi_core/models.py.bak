@@ -1,5 +1,6 @@
 import os
 
+from typing import List
 from pydantic import BaseModel
 from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
                         create_engine)
@@ -8,11 +9,11 @@ from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from config import DATABASE_URL
 
 # Получение значений переменных окружения
-user = os.getenv("POSTGRES_USER")
-password = os.getenv("POSTGRES_PASSWORD")
-dbname = os.getenv("POSTGRES_DB")
-host = os.getenv("DB_HOST")
-port = os.getenv("DB_PORT")
+POSTGRES_USER = os.getenv("POSTGRES_USER")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+POSTGRES_DB = os.getenv("POSTGRES_DB")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
 
 engine = create_engine(DATABASE_URL)
 
@@ -111,3 +112,8 @@ def get_db():
 # Модель для запроса разметки товара
 class MarkupRequest(BaseModel):
     matching_option: int
+
+
+class Recommendation(BaseModel):
+    product_id: int
+    recommended_ids: List[int]
