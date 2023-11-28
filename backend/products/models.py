@@ -67,3 +67,7 @@ class ProductDealerKey(models.Model):
                                    on_delete=models.CASCADE)
     compliance_percentage = models.DecimalField(max_digits=4,
                                                 decimal_places=1)
+    choices_order = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"ProductDealerKey {self.id} for Product {self.product_id}"
