@@ -46,10 +46,10 @@
 
 Лучший результат показала *BertModel*. В решении реализована она.
 
-## Краткая инструкция, как воспользоваться решением
-
-Для применения решения нужно вызвать функцию *result(marketing_product_csv, marketing_dealerprice_csv, quantity_int)*, где *quantity_int* - желаемое количество подбираемых товаров. Функция возвращает *json*-словарь, где каждому товару из *marketing_dealerprice_csv* соответствует список артикулов товаров из *marketing_product_csv*.
-
 ## Используемые библиотеки:
 
 numpy, pandas, torch, transformers, scipy
+
+## Краткая инструкция, как воспользоваться решением
+
+Для применения решения нужно вызвать функцию *result(marketing_product_csv, marketing_dealerprice_csv, quantity_int)*, где *quantity_int* - желаемое количество подбираемых товаров. Функция возвращает *json*-словарь, где каждому товару из *marketing_dealerprice_csv* соответствует список артикулов товаров из *marketing_product_csv*.
