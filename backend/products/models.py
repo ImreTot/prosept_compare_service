@@ -16,12 +16,11 @@ class Product(models.Model):
     Модель данных для таблицы 'marketing_product'.
     """
     article = models.CharField(max_length=100)
-    ean_13 = models.FloatField(null=True,
-                               blank=True)
+    ean_13 = models.FloatField(null=True)
     name = models.CharField(max_length=250)
-    cost = models.FloatField()
-    recommended_price = models.FloatField()
-    category_id = models.IntegerField()
+    cost = models.FloatField(null=True)
+    recommended_price = models.FloatField(null=True)
+    category_id = models.IntegerField(null=True)
     ozon_name = models.CharField(max_length=250)
     name_1c = models.CharField(max_length=250)
     wb_name = models.CharField(max_length=250)
@@ -38,15 +37,15 @@ class DealerPrice(models.Model):
     """
     Модель данных для таблицы 'marketing_dealerprice'.
     """
-    product_key = models.IntegerField()
-    price = models.FloatField()
+    product_key = models.IntegerField(null=True)
+    price = models.FloatField(null=True)
     product_url = models.URLField()
     product_name = models.CharField(max_length=250)
-    date = models.DateTimeField()
+    date = models.DateField()
     dealer_id = models.ForeignKey(Dealer,
                                   related_name='dealer_prices',
                                   on_delete=models.CASCADE)
-    marking_date = models.DateTimeField(auto_now=True)
+    marking_date = models.DateTimeField(null=True)
 
     def __str__(self):
         return self.product_url
@@ -65,9 +64,7 @@ class ProductDealerKey(models.Model):
     product_id = models.ForeignKey(Product,
                                    related_name='product_dealer_keys',
                                    on_delete=models.CASCADE)
-    compliance_percentage = models.DecimalField(max_digits=4,
-                                                decimal_places=1)
-    choices_order = models.PositiveIntegerField()
+    compliance_percentage = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return f"ProductDealerKey {self.id} for Product {self.product_id}"
