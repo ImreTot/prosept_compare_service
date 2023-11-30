@@ -10,6 +10,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from products.models import Dealer, DealerPrice, Product, ProductDealerKey
 from rest_framework import viewsets
+from django.db.models.functions import Coalesce
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
@@ -49,41 +50,37 @@ class LoadDataView(View):
 
 class MainView(View):
     def get(self, request, *args, **kwargs):
-        # Получаем параметры фильтрации из запроса
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
-        status_filter = request.GET.get('status') # Есть сопоставление с товаром производителя или нет
+        status_filter = request.GET.get('status')
 
-        # Используем даты из запроса или значения по умолчанию
         if not start_date or not end_date:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=6)
 
-        # Преобразуем строки в объекты дат
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        if not isinstance(start_date, datetime):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
+        if not isinstance(end_date, datetime):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-        # Формируем фильтры для запроса
-        filters = {'product_dealer_keys__marking_date__range': [start_date, end_date]}
-        if status_filter:
-            if status_filter == 'matched':
-                filters['product_dealer_keys__key__isnull'] = False
-            elif status_filter == 'unmatched':
-                filters['product_dealer_keys__key__isnull'] = True
+        filters = {'product_dealer_keys__key__marking_date__range': [start_date, end_date]}
 
-        # Получаем данные о товарах продавцов с учетом фильтров
-        products_info = Product.objects.annotate(
-            status=Case(
-                When(product_dealer_keys__marking_date__range=[start_date, end_date], then=Value('matched')),
+        annotations = {
+            'status': Case(
+                When(product_dealer_keys__isnull=False, then=Value('matched')),
                 default=Value('unmatched'),
                 output_field=CharField()
             ),
-            matching_product_id=Case(
-                When(product_dealer_keys__marking_date__range=[start_date, end_date], then=F('product_dealer_keys__product_id')),
-                default=None,
-                output_field=CharField()
-            )
-        ).filter(**filters).values('id', 'article', 'name', 'status', 'matching_product_id')
+            'matching_product_id': F('product_dealer_keys__product_id')
+        }
+
+        if status_filter:
+            if status_filter == 'matched':
+                filters['product_dealer_keys__isnull'] = False
+            elif status_filter == 'unmatched':
+                filters['product_dealer_keys__isnull'] = True
+
+        products_info = Product.objects.filter(**filters).annotate(**annotations).values('id', 'article', 'name', 'status', 'matching_product_id')
 
         return JsonResponse({'products': list(products_info)})
 
