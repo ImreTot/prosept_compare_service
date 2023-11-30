@@ -2,11 +2,11 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
+  // CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Button } from "./ui/button"
+// import { Button } from "./ui/button"
 
 const Visuals = () => {
   return (
@@ -20,9 +20,9 @@ const Visuals = () => {
           </CardHeader>
           <CardContent>
           </CardContent>
-          <CardFooter className="flex justify-end">
+          {/* <CardFooter className="flex justify-end">
             <Button>Cопоставить</Button>
-          </CardFooter>
+          </CardFooter> */}
         </Card>
       </div>
     </div>

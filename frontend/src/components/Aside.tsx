@@ -14,13 +14,6 @@ import { DateRange } from "react-day-picker"
 import { useState } from 'react'
 
 const Aside = () => {
-  const categories = [
-    { name: 'Антимикробная обработка', children: [{ name: 'Ванные комнаты' }, { name: 'Личная гигиена' }, { name: 'Универсальные средства' }] },
-    { name: 'Профессиональные моющие средства' },
-    { name: 'Защита древесины' },
-    { name: 'Строительная химия' },
-    { name: 'Бытовая химия' },
-  ]
   const dealers = ['Ozon', 'Yandex', 'Wildberries']
 
   const [date, setDate] = useState<DateRange | undefined>({
@@ -30,21 +23,6 @@ const Aside = () => {
 
   return (
     <aside className="mr-4">
-      <section>
-        <p className="font-bold mb-2 text-lg">Категория</p>
-        {categories.map((category, index) => (
-          <div key={index} className="mb-1 text-[0.9rem]">
-            <h2 className="hover:text-pink-300 transition-colors cursor-pointer">{category.name}</h2>
-            {category.children && (
-              <ul className="ml-4">
-                {category.children.map((child, childIndex) => (
-                  <li key={childIndex} className="hover:text-pink-300 transition-colors cursor-pointer">{child.name}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        ))}
-      </section>
       <section className="mt-4">
         <p className="font-bold mb-2 text-lg">Дилеры</p>
         <div className="grid gap-2">
@@ -73,8 +51,9 @@ const Aside = () => {
                 {date?.from ? (
                   date.to ? (
                     <>
-                      {format(date.from, "LLL dd, y")} -{" "}
-                      {format(date.to, "LLL dd, y")}
+                      {date.from.toLocaleDateString('ru', { month: 'short', day: 'numeric', year: 'numeric' })} -{" "}
+                      {date.to.toLocaleDateString('ru', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      {/* {format(date.to, "LLL dd, y")} */}
                     </>
                   ) : (
                     format(date.from, "LLL dd, y")
@@ -100,9 +79,32 @@ const Aside = () => {
 
       <section className="mt-4">
         <p className="font-bold mb-2 text-lg">Статус</p>
-        <div className="flex items-center space-x-2">
-          <Checkbox id="terms" />
-          <Label htmlFor="terms">Сопоставлено</Label>
+        <div className="grid gap-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="match" />
+            <Label htmlFor="match">Сопоставлено</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="not-match" />
+            <Label htmlFor="not-match">Несопоставлено</Label>
+          </div>
+        </div>
+      </section>
+      <section className="mt-4">
+        <p className="font-bold mb-2 text-lg">Количество позиций</p>
+        <div className="grid gap-2">
+          <div className="flex items-center space-x-2">
+            <Checkbox id="3" />
+            <Label htmlFor="3">3</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="5" />
+            <Label htmlFor="5">5</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="10" />
+            <Label htmlFor="10">10</Label>
+          </div>
         </div>
       </section>
     </aside>
