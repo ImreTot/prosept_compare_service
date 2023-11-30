@@ -93,7 +93,6 @@
           <th>Товар</th>
           <th>Дилер</th>
           <th>ID категории</th>
-          <th>Всего выборов</th>
           <th>Выборов варианта</th>
         </tr>
       </thead>
@@ -103,7 +102,6 @@
             <td>{{ stat.product_id.name }}</td>
             <td>{{ stat.dealer_id.name }}</td>
             <td>{{ stat.product_id.category_id }}</td>
-            <td>{{ stat.total_choices }}</td>
             <td>{{ stat.chosen_option_count }}</td>
           </tr>
         {% endfor %}

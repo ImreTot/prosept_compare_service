@@ -1,15 +1,36 @@
 from django.http import JsonResponse
-from products.models import Product, ProductDealerKey
+from products.models import Dealer, Product, DealerPrice, ProductDealerKey
 from .forms import MarkupRequestForm
+from rest_framework import generics
 from django.views import View
-from django.db.models import Count, F
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from datetime import datetime, timedelta
-from django.db.models import Count, Case, When, Value, CharField
+from .serializers import DealerSerializer, ProductSerializer, DealerPriceSerializer, ProductDealerKeySerializer
+from django.db.models import Count, F, Case, When, Value, CharField
+
+
+class DealerListCreateView(generics.ListCreateAPIView):
+    queryset = Dealer.objects.all()
+    serializer_class = DealerSerializer
+
+
+class ProductListCreateView(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+
+class DealerPriceListCreateView(generics.ListCreateAPIView):
+    queryset = DealerPrice.objects.all()
+    serializer_class = DealerPriceSerializer
+
+
+class ProductDealerKeyListCreateView(generics.ListCreateAPIView):
+    queryset = ProductDealerKey.objects.all()
+    serializer_class = ProductDealerKeySerializer
 
 
 class LoadDataView(View):
