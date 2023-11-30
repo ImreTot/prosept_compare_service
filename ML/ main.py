@@ -6,14 +6,15 @@
 
 # библиотеки
 import io
+import json
+import re
+import warnings
+
 import numpy as np
 import pandas as pd
-import re
 import torch
-from transformers import BertModel, BertTokenizer
 from scipy.spatial.distance import cosine
-import json
-import warnings
+from transformers import BertModel, BertTokenizer
 
 # константы
 SPACES = r'(?<=[а-яА-Я])(?=[a-zA-Z])|(?<=[a-zA-Z])(?=[а-яА-Я])'

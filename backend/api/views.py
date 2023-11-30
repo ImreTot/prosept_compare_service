@@ -1,16 +1,19 @@
+from datetime import datetime, timedelta
+
+from django.db import transaction
+from django.db.models import Case, CharField, Count, F, Value, When
 from django.http import JsonResponse
-from products.models import Dealer, Product, DealerPrice, ProductDealerKey
-from .forms import MarkupRequestForm
-from rest_framework import generics
-from django.views import View
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
+from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-from django.db import transaction
-from django.shortcuts import get_object_or_404
-from datetime import datetime, timedelta
-from .serializers import DealerSerializer, ProductSerializer, DealerPriceSerializer, ProductDealerKeySerializer
-from django.db.models import Count, F, Case, When, Value, CharField
+from products.models import Dealer, DealerPrice, Product, ProductDealerKey
+from rest_framework import generics
+
+from .forms import MarkupRequestForm
+from .serializers import (DealerPriceSerializer, DealerSerializer,
+                          ProductDealerKeySerializer, ProductSerializer)
 
 
 class DealerListCreateView(generics.ListCreateAPIView):
