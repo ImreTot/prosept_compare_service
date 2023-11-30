@@ -1,4 +1,5 @@
 import csv
+import io
 
 from products.models import Dealer, DealerPrice, Product
 
@@ -81,6 +82,25 @@ def import_prices_from_csv(path_to_csv):
                     )
                 )
         DealerPrice.objects.bulk_create(prices_list)
+
+
+def export_model_to_csv(model):
+    # Открываем объект для записи CSV в памяти
+    csv_buffer = io.StringIO()
+    csv_writer = csv.writer(csv_buffer)
+
+    # Заголовки CSV - имена полей модели
+    headers = [field.name for field in model._meta.fields]
+    csv_writer.writerow(headers)
+
+    # Записываем данные из базы данных в CSV
+    for row in model.objects.all():
+        csv_writer.writerow([getattr(row, field) for field in headers])
+
+    # Возвращаем объект для чтения CSV из памяти
+    csv_buffer.seek(0)
+
+    return csv_buffer
 
 
 # временные пути для файлов

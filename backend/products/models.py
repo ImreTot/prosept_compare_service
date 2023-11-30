@@ -39,7 +39,7 @@ class DealerPrice(models.Model):
     """
     product_key = models.IntegerField(null=True)
     price = models.FloatField(null=True)
-    product_url = models.URLField()
+    product_url = models.URLField(unique=True)
     product_name = models.CharField(max_length=250)
     date = models.DateField()
     dealer_id = models.ForeignKey(Dealer,
