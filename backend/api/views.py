@@ -8,9 +8,9 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
-from products.models import Dealer, DealerPrice, Product, ProductDealerKey
 from rest_framework import viewsets
-from django.db.models.functions import Coalesce
+
+from products.models import Dealer, DealerPrice, Product, ProductDealerKey
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
