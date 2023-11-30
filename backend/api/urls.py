@@ -19,5 +19,4 @@ urlpatterns = [
     path('matching_options/<int:product_id>/', MatchingOptionsView.as_view(), name='matching_options'),
     path('markup_product/<int:product_id>/', MarkupProductView.as_view(), name='markup_product'),
     path('statistics/', StatisticsView.as_view(), name='statistics'),
-    path('api/v1/', include(router.urls)),
 ]

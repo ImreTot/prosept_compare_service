@@ -9,29 +9,26 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from products.models import Dealer, DealerPrice, Product, ProductDealerKey
-from rest_framework import generics
+from rest_framework import viewsets
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
                           ProductDealerKeySerializer, ProductSerializer)
 
 
-class DealerListCreateView(generics.ListCreateAPIView):
+class DealerListCreateView(viewsets.ModelViewSet):
     queryset = Dealer.objects.all()
     serializer_class = DealerSerializer
 
-
-class ProductListCreateView(generics.ListCreateAPIView):
+class ProductListCreateView(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
-
-class DealerPriceListCreateView(generics.ListCreateAPIView):
+class DealerPriceListCreateView(viewsets.ModelViewSet):
     queryset = DealerPrice.objects.all()
     serializer_class = DealerPriceSerializer
 
-
-class ProductDealerKeyListCreateView(generics.ListCreateAPIView):
+class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
     queryset = ProductDealerKey.objects.all()
     serializer_class = ProductDealerKeySerializer
 
