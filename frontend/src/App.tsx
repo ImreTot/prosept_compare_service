@@ -4,7 +4,7 @@ import TheFooter from "@/components/TheFooter"
 import TheHeader from "@/components/TheHeader"
 import Aside from "./components/Aside"
 import Search from "./components/Search"
-import { Table } from "./components/ui/table"
+import Table from "@/components/table/Table"
 
 function App() {
 
@@ -17,7 +17,7 @@ function App() {
             <Aside />
           </div>
           <div className="flex-1 flex flex-col">
-            <Search />
+            {/* <Search /> */}
             <div className="flex flex-1">
               <Table />
               {/* <section className="flex flex-1"><Visuals /></section> */}

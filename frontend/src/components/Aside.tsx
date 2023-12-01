@@ -23,7 +23,7 @@ const Aside = () => {
 
   return (
     <aside className="mr-4">
-      <section className="mt-4">
+      <section >
         <p className="font-bold mb-2 text-lg">Дилеры</p>
         <div className="grid gap-2">
           {dealers.map((dealer) => (
@@ -87,6 +87,10 @@ const Aside = () => {
           <div className="flex items-center space-x-2">
             <Checkbox id="not-match" />
             <Label htmlFor="not-match">Несопоставлено</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="not-match" />
+            <Label htmlFor="not-match">Ненайденные</Label>
           </div>
         </div>
       </section>
