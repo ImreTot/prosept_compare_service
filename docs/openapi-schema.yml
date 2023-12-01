@@ -22,6 +22,8 @@ paths:
         - dealers
       summary: Получить список всех дилеров
       description: Получить всех дилеров из БД
+      security:
+        - Token [ ]
       operationId: updatePet
       responses:
         '200':
@@ -31,17 +33,24 @@ paths:
               schema:
                 $ref: '#/components/schemas/dealers'
         '400':
-          description: Invalid ID supplied
-        '404':
-          description: Pet not found
-        '405':
-          description: Validation exception
+          description: Неверные запрос
+        '401':
+          description: Неавторизованный пользователь
   /prices/:
     get:
       tags:
         - prices
       summary: Получить список объявлений дилеров
       description: В зависимости от переданных параметров возвращает либо все объявления, либо те, что соответствуют запросу.
+      security:
+        - Token [ ]
+      parameters:
+        - name: type
+          required: false
+          in: path
+          description: Тип объявлений - неразмеченные, размеченные и пропущенные.
+          schema:
+            type: string
       responses:
         '200':
           description: Успешный запрос
@@ -49,6 +58,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/prices'
+        '400':
+          description: Неверные параметры запроса
+        '401':
+          description: Неавторизованный пользователь
+  /prices/{id}/:
+    get:
+      tags:
+        - prices
+      summary: Получить выбранное объявление дилера
+      description: В запросе передается ID объявления дилера. Возвращается массив с данными объявления.
+      security:
+        - Token [ ]
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: ID
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/current_price'
 components:
   schemas:
     dealers:
@@ -83,3 +118,84 @@ components:
           type: string
           format: date
           example: 2023-07-11
+    current_price:
+      type: object
+      properties:
+        product_key:
+          type: integer
+          format: int64
+          example: 10
+        price:
+          type: integer
+          format: int64
+          example: 360.0
+        product_url:
+          type: string
+          format: url
+          example: https://akson.ru//p/propitka_prosept_aquaisol_dlya_kamnya_kontsentrat_1_2_1l/
+        product_name:
+          type: string
+          example: Пропитка PROSEPT Aquaisol для камня, концентрат 1:2 1л
+        date:
+          type: string
+          format: date
+          example: 2023-07-11
+        marking_date:
+          type: string
+          format: data
+          example:
+            2023-07-11
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/products_in_prices'
+    products_in_prices:
+      type: object
+      properties:
+        article:
+          type: string
+          example: 008-1
+        ean_13:
+          type: integer
+          example: 4680008140234.0
+        name:
+          type: string
+          example: Антисептик невымываемыйPROSEPT ULTRAконцентрат 1:10  / 1 л
+        cost:
+          type: integer
+          example: 360.0
+        recommended_price:
+          type: integer
+          example: 858.0
+        category_id:
+          type: integer
+          example: 20
+        ozon_name:
+          type: string
+          example: Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.;Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.
+        name_1c:
+          type: string
+          example: Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.;Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.
+        wb_name:
+          type: string
+          example: Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.;Антисептик невымываемый для ответственных конструкций PROSEPT ULTRA, концентрат, 1 л.
+        ozon_article:
+          type: string
+          example: 189522705.0
+        wb_article:
+          type: string
+          example: 150033482.0
+        ym_article:
+          type: string
+          example: 150033482.0
+        compliance_percentage:
+          type: integer
+          example: 1
+
+
+  securitySchemes:
+    Token:
+      description: 'Авторизация по токену. <br>
+      Все запросы от имени пользователя должны выполняться с заголовком "Authorization: Token TOKENVALUE"'
+      type: http
+      scheme: token
