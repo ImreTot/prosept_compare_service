@@ -65,6 +65,8 @@ class ProductDealerKey(models.Model):
                                    related_name='product_dealer_keys',
                                    on_delete=models.CASCADE)
     compliance_percentage = models.PositiveSmallIntegerField()
+    marking_date = models.DateTimeField(null=True)
+    choices_order = models.IntegerField(null=True)
 
     def __str__(self):
         return f"ProductDealerKey {self.id} for Product {self.product_id}"

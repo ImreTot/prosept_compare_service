@@ -177,10 +177,6 @@ class StatisticsView(TemplateView):
             end_date = datetime.now()
             start_date = end_date - timedelta(days=6)
 
-        # Преобразуем строки в объекты дат
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-
         # Получение общего количества размеченных товаров за выбранный период
         total_markup_count = ProductDealerKey.objects.filter(
             marking_date__range=[start_date, end_date]
