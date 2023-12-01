@@ -169,13 +169,16 @@ class StatisticsView(TemplateView):
         context = super().get_context_data(**kwargs)
 
         # Получаем начальную и конечную дату из запроса
-        start_date = self.request.GET.get('start_date')
-        end_date = self.request.GET.get('end_date')
+        start_date_str = self.request.GET.get('start_date')
+        end_date_str = self.request.GET.get('end_date')
 
         # Используем даты из запроса или значения по умолчанию
-        if not start_date or not end_date:
+        if not start_date_str or not end_date_str:
             end_date = datetime.now()
             start_date = end_date - timedelta(days=6)
+        else:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
 
         # Получение общего количества размеченных товаров за выбранный период
         total_markup_count = ProductDealerKey.objects.filter(
