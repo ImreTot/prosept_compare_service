@@ -63,7 +63,7 @@ class MainView(View):
         if not isinstance(end_date, datetime):
             end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-        filters = {'product_dealer_keys__key__marking_date__range': [start_date, end_date]}
+        filters = {}
 
         annotations = {
             'status': Case(
