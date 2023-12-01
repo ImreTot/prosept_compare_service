@@ -21,17 +21,30 @@ class DealerListCreateView(viewsets.ModelViewSet):
     queryset = Dealer.objects.all()
     serializer_class = DealerSerializer
 
+
 class ProductListCreateView(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
+
 
 class DealerPriceListCreateView(viewsets.ModelViewSet):
     queryset = DealerPrice.objects.all()
     serializer_class = DealerPriceSerializer
 
+
 class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
     queryset = ProductDealerKey.objects.all()
     serializer_class = ProductDealerKeySerializer
+    
+
+class PriceListView(viewsets.ModelViewSet):
+    queryset = DealerPrice.objects.all()
+    serializer_class = DealerPriceSerializer
+    
+
+class PriceDetailView(viewsets.ModelViewSet):
+    queryset = DealerPrice.objects.all()
+    serializer_class = DealerPriceSerializer
 
 
 class LoadDataView(View):
