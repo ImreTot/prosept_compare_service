@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from products.models import Dealer, DealerPrice, Product, ProductDealerKey
+from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
+                             Statistics)
 
 
 class DealerSerializer(serializers.ModelSerializer):
@@ -24,4 +25,10 @@ class DealerPriceSerializer(serializers.ModelSerializer):
 class ProductDealerKeySerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductDealerKey
+        fields = '__all__'
+
+
+class StatisticsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Statistics
         fields = '__all__'

@@ -1,50 +1,20 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from django.db import transaction
 from django.db.models import Case, CharField, Count, F, Value, When
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.utils.decorators import method_decorator
+from django.urls import reverse
+from django.utils import timezone
 from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import TemplateView
-from rest_framework import viewsets
 
-from products.models import Dealer, DealerPrice, Product, ProductDealerKey
+from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
+                             Statistics)
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
-                          ProductDealerKeySerializer, ProductSerializer)
-
-
-class DealerListCreateView(viewsets.ModelViewSet):
-    queryset = Dealer.objects.all()
-    serializer_class = DealerSerializer
-
-
-class ProductListCreateView(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-
-
-class DealerPriceListCreateView(viewsets.ModelViewSet):
-    queryset = DealerPrice.objects.all()
-    serializer_class = DealerPriceSerializer
-
-
-class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
-    queryset = ProductDealerKey.objects.all()
-    serializer_class = ProductDealerKeySerializer
-    
-
-class PriceListView(viewsets.ModelViewSet):
-    queryset = DealerPrice.objects.all()
-    serializer_class = DealerPriceSerializer
-    
-
-class PriceDetailView(viewsets.ModelViewSet):
-    queryset = DealerPrice.objects.all()
-    serializer_class = DealerPriceSerializer
+                          ProductDealerKeySerializer, ProductSerializer,
+                          StatisticsSerializer)
 
 
 class LoadDataView(View):
@@ -62,23 +32,64 @@ class LoadDataView(View):
 
 
 class MainView(View):
+    """
+    Представление для отображения списка продуктов с возможностью фильтрации.
+
+    GET-запрос:
+    - Параметры запроса:
+      - start_date: Начальная дата фильтрации (необязательно, формат: 'YYYY-MM-DD').
+      - end_date: Конечная дата фильтрации (необязательно, формат: 'YYYY-MM-DD').
+      - status: Фильтр по статусу ('matched' или 'unmatched', необязательно).
+      - dealers: Список идентификаторов продавцов для дополнительной фильтрации (необязательно).
+      - num_matches: Количество вариантов соответствия, которое нужно предоставить (необязательно).
+
+    POST-запрос:
+    - Параметры запроса:
+      - action: Действие ('Да', 'Нет' или 'Сопоставить').
+      - product_id: Идентификатор продукта.
+    
+    Возвращает JsonResponse со списком продуктов, в том числе удовлетворяющих заданным критериям фильтрации,
+    а также предоставляет количество совпадений в соответствии с параметром num_matches.
+    """
+
     def get(self, request, *args, **kwargs):
         start_date = request.GET.get('start_date')
         end_date = request.GET.get('end_date')
         status_filter = request.GET.get('status')
+        dealer_ids = request.GET.getlist('dealers[]')
+        num_matches = request.GET.get('num_matches')
 
+        # Логика для определения начальной и конечной даты, если не заданы
         if not start_date or not end_date:
-            end_date = datetime.now()
+            end_date = timezone.now()
             start_date = end_date - timedelta(days=6)
 
-        if not isinstance(start_date, datetime):
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-        if not isinstance(end_date, datetime):
-            end_date = datetime.strptime(end_date, "%Y-%m-%d")
+        if not isinstance(start_date, timezone):
+            """
+            Если начальная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
 
-        filters = {}
+            Параметры:
+            - start_date (str или datetime): Начальная дата фильтрации.
+
+            Результат:
+            - start_date преобразуется в объект datetime, если она не является таковым.
+            """
+            start_date = timezone.strptime(start_date, "%Y-%m-%d")
+
+        if not isinstance(end_date, timezone):
+            """
+            Если конечная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
+
+            Параметры:
+            - end_date (str или datetime): Конечная дата фильтрации.
+
+            Результат:
+            - end_date преобразуется в объект datetime, если она не является таковым.
+            """
+            end_date = timezone.strptime(end_date, "%Y-%m-%d")
 
         annotations = {
+            # Данный словарь используется для добавления аннотаций (новых полей) к запросу базы данных.
             'status': Case(
                 When(product_dealer_keys__isnull=False, then=Value('matched')),
                 default=Value('unmatched'),
@@ -87,16 +98,86 @@ class MainView(View):
             'matching_product_id': F('product_dealer_keys__product_id')
         }
 
+        # Дополнительная фильтрация по dealer_ids
+        if dealer_ids:
+            dealer_filter = {'dealer__id__in': dealer_ids}
+        else:
+            dealer_filter = {}
+
         if status_filter:
+            """
+            Если параметр status_filter задан, устанавливает фильтр по статусу продуктов.
+
+            Параметры:
+            - status_filter (str): Фильтр по статусу ('matched' или 'unmatched').
+
+            Действия:
+            - Если status_filter равен 'matched', фильтрует продукты, у которых имеются соответствия.
+            - Если status_filter равен 'unmatched', фильтрует продукты, у которых нет соответствий.
+
+            Результат:
+            - dealer_filter обновляется в соответствии с заданным статусом для последующего использования
+            в фильтрации продуктов.
+            """
+            
             if status_filter == 'matched':
-                filters['product_dealer_keys__isnull'] = False
+                dealer_filter['product_dealer_keys__isnull'] = False
             elif status_filter == 'unmatched':
-                filters['product_dealer_keys__isnull'] = True
+                dealer_filter['product_dealer_keys__isnull'] = True
 
-        products_info = Product.objects.filter(**filters).annotate(**annotations).values('id', 'article', 'name', 'status', 'matching_product_id')
+        # Получение списка продуктов из базы данных
+        products_info_objects = Product.objects.filter(**dealer_filter, **annotations)
 
-        return JsonResponse({'products': list(products_info)})
+        # Сериализация данных о товарах
+        products_info_serialized = ProductSerializer(products_info_objects, many=True).data
 
+        # Получение списка вариантов соответствия для каждого продукта
+        matching_options = []
+        for product in products_info_objects:
+            product_id = product.id
+            matching_options_url = reverse('matching_options', args=[product_id])
+            matching_options.append(matching_options_url)
+
+        # Логика для num_matches
+        if num_matches:
+            # Ограничение количества вариантов соответствия в соответствии с параметром num_matches
+            num_matches = int(num_matches)
+            matching_options = matching_options[:num_matches]
+
+        # Сериализация цен продавцов
+        dealer_prices = DealerPrice.objects.filter(**dealer_filter).values('id', 'price', 'dealer_id', 'product_id')
+        dealer_prices_serialized = DealerPriceSerializer(dealer_prices, many=True).data
+
+        # Сериализация данных о продавцах
+        dealers = Dealer.objects.filter(**dealer_filter).values('dealer_id')
+        dealers_serialized = DealerSerializer(dealers, many=True).data
+
+        return JsonResponse({
+            'products': products_info_serialized,
+            'matching_options': matching_options,
+            'dealer_prices': dealer_prices_serialized,
+            'dealers': dealers_serialized,
+        })
+    
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        
+        if action == 'Да':
+            # Обработка "Да"
+            # Добавить логику для "Да"
+            return JsonResponse({"message": "Да"})
+        elif action == 'Нет':
+            # Обработка "Нет"
+            # Добавить логику для "Нет"
+            return JsonResponse({"message": "Нет"})
+        elif action == 'Сопоставить':
+            # Обработка "Сопоставить"
+            # Добавить логику для "Сопоставить"
+            return JsonResponse({"message": "Сопоставить"})
+        else:
+            return JsonResponse({"error": "Неверное действие"}, status=400) # На случай возможных изменений в коде
+    
 
 class MatchingOptionsView(View):
     """
@@ -107,17 +188,24 @@ class MatchingOptionsView(View):
         """
         Обработчик GET-запроса для получения вариантов соответствия товара.
 
-        Возвращает JsonResponse с вариантами соответствия (в данном случае, просто целыми числами).
+        Возвращает JsonResponse с вариантами соответствия.
         """
+        product_dealer_keys = ProductDealerKey.objects.filter(product_id=product_id)
+
+        # Сериализация объектов с использованием ProductDealerKeySerializer
+        serializer = ProductDealerKeySerializer(product_dealer_keys, many=True)
+        serialized_data = serializer.data
+
+        return JsonResponse({"matching_options": serialized_data})
         # Здесь добавить логику для предоставления вариантов соответствия (с использованием ML-модели)
-        recommendations = [1, 2, 3]  # Заменить на логику получения рекомендаций
-        return JsonResponse({"product_id": product_id, "recommendations": recommendations})
-    
+
+            
     
 class MarkupProductView(View):
     """
     Представление для разметки товара.
     """
+    template_name = 'заменить на будущий путь шаблона.html'  # Шаблон для режима разметки
 
     def get(self, request, product_id, *args, **kwargs):
         """
@@ -139,7 +227,6 @@ class MarkupProductView(View):
         else:
             return JsonResponse({"product_id": product_id, "marked": False})
 
-    @method_decorator(csrf_exempt)
     @transaction.atomic
     def post(self, request, product_id, *args, **kwargs):
         """
@@ -152,18 +239,30 @@ class MarkupProductView(View):
 
         if markup_request_form.is_valid():
             key = markup_request_form.cleaned_data['key']
-            # Получаем текущее количество разметок для товара
             markup_count = ProductDealerKey.objects.filter(product=product).count()
-            
+                                    
             # Увеличиваем счетчик для новой разметки
             product_dealer_key = ProductDealerKey.objects.create(key=key, product=product, order=markup_count + 1)
-            return JsonResponse({"message": f"Разметка товара {product_id} завершена", "markup_id": product_dealer_key.id})
+
+            # Сохраняем статистику выбора варианта
+            choice_statistics = Statistics.objects.create(
+                product=product,
+                chosen_option_order=markup_count + 1,
+        )
+            return JsonResponse({
+            "message": f"Разметка товара {product_id} завершена",
+            "markup_id": product_dealer_key.id,
+            "choice_statistics": choice_statistics.id  # или используйте другой способ идентификации
+            })
         else:
             return JsonResponse({"error": "Неверные данные формы"}, status=400)
 
 
-class StatisticsView(TemplateView):
-    template_name = 'statistics.html'
+class StatisticsView(View):
+    """
+    Представление для отображения статистики разметки товаров.
+    """
+    template_name = 'statistics.html' # Заменить на создаваемый шаблон
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -174,18 +273,18 @@ class StatisticsView(TemplateView):
 
         # Используем даты из запроса или значения по умолчанию
         if not start_date_str or not end_date_str:
-            end_date = datetime.now()
+            end_date = timezone.now()
             start_date = end_date - timedelta(days=6)
         else:
-            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
-            end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+            start_date = timezone.strptime(start_date_str, "%Y-%m-%d")
+            end_date = timezone.strptime(end_date_str, "%Y-%m-%d")
 
-        # Получение общего количества размеченных товаров за выбранный период
+        # Статистика общего количества размеченных товаров за выбранный период
         total_markup_count = ProductDealerKey.objects.filter(
             marking_date__range=[start_date, end_date]
         ).count()
 
-        # Получение статистики выбора предложенных вариантов за выбранный период
+        # Статистика выбора предложенных вариантов за выбранный период
         chosen_options_stats = ProductDealerKey.objects.filter(
             marking_date__range=[start_date, end_date]
         ).exclude(key=None).values(
@@ -195,7 +294,7 @@ class StatisticsView(TemplateView):
             chosen_option_count=Count('key')
         )
 
-        # Получение статистики по порядку выбора вариантов за выбранный период
+        # Статистика по порядку выбора вариантов за выбранный период
         choices_order_stats = chosen_options_stats.values(
             'choices_order', 'product_id', 'dealer_id', 'product_id__category_id'
         ).annotate(
@@ -204,6 +303,20 @@ class StatisticsView(TemplateView):
 
         # Статистика по тому, как часто ни один вариант не выбран за выбранный период
         none_chosen_count = chosen_options_stats.filter(chosen_option_count=0).count()
+
+        # Сериализация статистики
+        statistics_data = Statistics.objects.all()
+        statistics_serialized = StatisticsSerializer(statistics_data, many=True).data
+
+        context['statistics'] = statistics_serialized
+
+        # Сохранение статистики в базе данных
+        Statistics.objects.create(
+            start_date=start_date,
+            end_date=end_date,
+            total_markup_count=total_markup_count,
+            none_chosen_count=none_chosen_count,
+        )
 
         context['start_date'] = start_date.strftime("%Y-%m-%d")
         context['end_date'] = end_date.strftime("%Y-%m-%d")
