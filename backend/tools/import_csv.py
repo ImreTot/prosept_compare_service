@@ -1,5 +1,7 @@
 import csv
 import io
+import pandas as pd
+import io
 
 from products.models import Dealer, DealerPrice, Product
 
@@ -101,6 +103,40 @@ def export_model_to_csv(model):
     csv_buffer.seek(0)
 
     return csv_buffer
+
+
+def send_csv_to_model(file_path):
+    # Открываем файл для чтения
+    with open(file_path, 'r') as file:
+        # Открываем объект для записи CSV в памяти
+        csv_buffer = io.StringIO()
+        csv_writer = csv.writer(csv_buffer)
+
+        # Читаем первую строку файла, которая обычно содержит заголовки
+        headers = file.readline().strip().split(',')
+        csv_writer.writerow(headers)
+
+        # Читаем остальные строки и записываем их в CSV
+        for line in file:
+            row_data = line.strip().split(',')
+            csv_writer.writerow(row_data)
+
+        # Возвращаем объект для чтения CSV из памяти
+        csv_buffer.seek(0)
+
+        return csv_buffer
+
+
+def export_db_to_csv(model, file_path):
+    # Заголовки CSV - имена полей модели
+    headers = [field.name for field in model._meta.fields]
+
+    # Создаем DataFrame из данных модели
+    data = [[getattr(row, field) for field in headers] for row in model.objects.all()]
+    df = pd.DataFrame(data, columns=headers)
+
+    # Сохраняем DataFrame в CSV файл
+    df.to_csv(file_path, index=False)
 
 
 # временные пути для файлов
