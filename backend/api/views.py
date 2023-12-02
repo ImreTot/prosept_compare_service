@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from django.db import transaction
-from django.db.models import Case, CharField, Count, F, Value, When
+from django.db.models import Count, Exists, OuterRef
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -64,7 +64,7 @@ class MainView(View):
             end_date = timezone.now()
             start_date = end_date - timedelta(days=6)
 
-        if not isinstance(start_date, timezone):
+        if not isinstance(start_date, timezone.datetime):
             """
             Если начальная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
 
@@ -76,7 +76,7 @@ class MainView(View):
             """
             start_date = timezone.strptime(start_date, "%Y-%m-%d")
 
-        if not isinstance(end_date, timezone):
+        if not isinstance(end_date, timezone.datetime):
             """
             Если конечная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
 
@@ -87,16 +87,6 @@ class MainView(View):
             - end_date преобразуется в объект datetime, если она не является таковым.
             """
             end_date = timezone.strptime(end_date, "%Y-%m-%d")
-
-        annotations = {
-            # Данный словарь используется для добавления аннотаций (новых полей) к запросу базы данных.
-            'status': Case(
-                When(product_dealer_keys__isnull=False, then=Value('matched')),
-                default=Value('unmatched'),
-                output_field=CharField()
-            ),
-            'matching_product_id': F('product_dealer_keys__product_id')
-        }
 
         # Дополнительная фильтрация по dealer_ids
         if dealer_ids:
@@ -126,7 +116,7 @@ class MainView(View):
                 dealer_filter['product_dealer_keys__isnull'] = True
 
         # Получение списка продуктов из базы данных
-        products_info_objects = Product.objects.filter(**dealer_filter, **annotations)
+        products_info_objects = Product.objects.filter(**dealer_filter)
 
         # Сериализация данных о товарах
         products_info_serialized = ProductSerializer(products_info_objects, many=True).data
@@ -134,8 +124,8 @@ class MainView(View):
         # Получение списка вариантов соответствия для каждого продукта
         matching_options = []
         for product in products_info_objects:
-            product_id = product.id
-            matching_options_url = reverse('matching_options', args=[product_id])
+            product_key = product.id
+            matching_options_url = reverse('matching_options', args=[product_key])
             matching_options.append(matching_options_url)
 
         # Логика для num_matches
@@ -145,11 +135,11 @@ class MainView(View):
             matching_options = matching_options[:num_matches]
 
         # Сериализация цен продавцов
-        dealer_prices = DealerPrice.objects.filter(**dealer_filter).values('id', 'price', 'dealer_id', 'product_id')
+        dealer_prices = DealerPrice.objects.filter(**dealer_filter)
         dealer_prices_serialized = DealerPriceSerializer(dealer_prices, many=True).data
 
         # Сериализация данных о продавцах
-        dealers = Dealer.objects.filter(**dealer_filter).values('dealer_id')
+        dealers = Dealer.objects.filter(**dealer_filter)
         dealers_serialized = DealerSerializer(dealers, many=True).data
 
         return JsonResponse({
