@@ -114,8 +114,8 @@ def result(marketing_product_csv: io.TextIOBase,
     str: Результат в формате JSON.
     """
     # csv to dataset
-    marketing_product_df = pd.read_csv(marketing_product_csv, sep=';')
-    marketing_dealerprice_df = pd.read_csv(marketing_dealerprice_csv, sep=';')
+    marketing_product_df = pd.read_csv(marketing_product_csv)
+    marketing_dealerprice_df = pd.read_csv(marketing_dealerprice_csv)
     
     # clean df
     marketing_product_df = marketing_product_df[['article', 'name']].dropna().drop_duplicates().reset_index(drop=True)
