@@ -1,11 +1,12 @@
-from datetime import timedelta
-
+from datetime import timedelta, datetime
+from django.shortcuts import render
 from django.db import transaction
-from django.db.models import Count, Exists, OuterRef
+from django.db.models import Count
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
+from django.utils.dateparse import parse_date
 from django.views import View
 from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
                              Statistics)
@@ -91,7 +92,7 @@ class MainView(View):
             Результат:
             - start_date преобразуется в объект datetime, если она не является таковым.
             """
-            start_date = timezone.strptime(start_date, "%Y-%m-%d")
+            start_date = parse_date(start_date)
 
         if not isinstance(end_date, timezone.datetime):
             """
@@ -103,7 +104,7 @@ class MainView(View):
             Результат:
             - end_date преобразуется в объект datetime, если она не является таковым.
             """
-            end_date = timezone.strptime(end_date, "%Y-%m-%d")
+            end_date = parse_date(end_date)
 
         # Дополнительная фильтрация по dealer_ids
         if dealer_ids:
@@ -267,13 +268,11 @@ class MarkupProductView(View):
 
 class StatisticsView(View):
     """
-    Представление для отображения статистики разметки товаров.
+    Представление для работы со статистикой.
     """
-    template_name = 'statistics.html' # Заменить на создаваемый шаблон
+    template_name = 'statistics.html'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
+    def get(self, request, *args, **kwargs):
         # Получаем начальную и конечную дату из запроса
         start_date_str = self.request.GET.get('start_date')
         end_date_str = self.request.GET.get('end_date')
@@ -283,8 +282,8 @@ class StatisticsView(View):
             end_date = timezone.now()
             start_date = end_date - timedelta(days=6)
         else:
-            start_date = timezone.strptime(start_date_str, "%Y-%m-%d")
-            end_date = timezone.strptime(end_date_str, "%Y-%m-%d")
+            start_date = parse_date(start_date_str)
+            end_date = parse_date(end_date_str)
 
         # Статистика общего количества размеченных товаров за выбранный период
         total_markup_count = ProductDealerKey.objects.filter(
@@ -302,11 +301,23 @@ class StatisticsView(View):
         )
 
         # Статистика по порядку выбора вариантов за выбранный период
-        choices_order_stats = chosen_options_stats.values(
+        choices_order = chosen_options_stats.values(
             'choices_order', 'product_id', 'dealer_id', 'product_id__category_id'
         ).annotate(
             choices_count=Count('choices_order')
         ).order_by('choices_order')
+
+        # Счетчик для порядкового номера выбора вариантов
+        choices_counter = 1
+
+        # Присвоение порядкового номера выбора вариантов
+        for stat in choices_order:
+            stat['choices_order'] = choices_counter
+            choices_counter += 1
+
+        # Преобразование QuerySet в список для сохранения в модель
+        chosen_options_stats_list = list(chosen_options_stats)
+        choices_order_list = list(choices_order)
 
         # Статистика по тому, как часто ни один вариант не выбран за выбранный период
         none_chosen_count = chosen_options_stats.filter(chosen_option_count=0).count()
@@ -315,7 +326,15 @@ class StatisticsView(View):
         statistics_data = Statistics.objects.all()
         statistics_serialized = StatisticsSerializer(statistics_data, many=True).data
 
-        context['statistics'] = statistics_serialized
+        context = {
+            'statistics': statistics_serialized,
+            'start_date': start_date.strftime("%Y-%m-%d"),
+            'end_date': end_date.strftime("%Y-%m-%d"),
+            'total_markup_count': total_markup_count,
+            'chosen_options_stats': chosen_options_stats_list,
+            'choices_order': choices_order_list,
+            'none_chosen_count': none_chosen_count,
+        }
 
         # Сохранение статистики в базе данных
         Statistics.objects.create(
@@ -323,13 +342,8 @@ class StatisticsView(View):
             end_date=end_date,
             total_markup_count=total_markup_count,
             none_chosen_count=none_chosen_count,
+            choices_order=choices_order_list,
+            chosen_options_stats=chosen_options_stats_list,
         )
 
-        context['start_date'] = start_date.strftime("%Y-%m-%d")
-        context['end_date'] = end_date.strftime("%Y-%m-%d")
-        context['total_markup_count'] = total_markup_count
-        context['chosen_options_stats'] = chosen_options_stats
-        context['choices_order_stats'] = choices_order_stats
-        context['none_chosen_count'] = none_chosen_count
-
-        return context
+        return render(request, self.template_name, context)

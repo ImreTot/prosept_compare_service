@@ -73,11 +73,12 @@ class ProductDealerKey(models.Model):
     
 
 class Statistics(models.Model):
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
     total_markup_count = models.IntegerField()
     none_chosen_count = models.IntegerField()
-    choices_order = models.IntegerField()
+    choices_order = models.JSONField()
+    chosen_options_stats = models.JSONField()
 
     def __str__(self):
         return f"Statistics for {self.start_date} - {self.end_date}"
