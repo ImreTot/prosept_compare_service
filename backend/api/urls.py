@@ -1,11 +1,17 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from .views import (LoadDataView, MainView, MarkupProductView,
-                    MatchingOptionsView, StatisticsView)
+from .views import (DealerListCreateView, DealerPriceListCreateView,
+                    LoadDataView, MainView, MarkupProductView,
+                    MatchingOptionsView, ProductDealerKeyListCreateView,
+                    ProductListCreateView, StatisticsView)
 
 # Создаем роутер
 router = DefaultRouter()
+router.register('dealers', DealerListCreateView, basename='dealers')
+router.register('products', ProductListCreateView, basename='products')
+router.register('dealer_prices', DealerPriceListCreateView, basename='dealer_prices')
+router.register('product_dealer_keys', ProductDealerKeyListCreateView, basename='product_dealer_keys')
 
 urlpatterns = [
     path('', MainView.as_view(), name='main_view'),

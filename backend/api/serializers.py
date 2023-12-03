@@ -1,7 +1,6 @@
-from rest_framework import serializers
-
 from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
                              Statistics)
+from rest_framework import serializers
 
 
 class DealerSerializer(serializers.ModelSerializer):

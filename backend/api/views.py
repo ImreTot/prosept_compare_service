@@ -7,14 +7,31 @@ from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils import timezone
 from django.views import View
-
 from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
                              Statistics)
+from rest_framework import viewsets
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
                           ProductDealerKeySerializer, ProductSerializer,
                           StatisticsSerializer)
+
+
+class DealerListCreateView(viewsets.ModelViewSet):
+    queryset = Dealer.objects.all()
+    serializer_class = DealerSerializer
+
+class ProductListCreateView(viewsets.ModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+class DealerPriceListCreateView(viewsets.ModelViewSet):
+    queryset = DealerPrice.objects.all()
+    serializer_class = DealerPriceSerializer
+
+class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
+    queryset = ProductDealerKey.objects.all()
+    serializer_class = ProductDealerKeySerializer
 
 
 class LoadDataView(View):
