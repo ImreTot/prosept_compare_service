@@ -2,6 +2,7 @@ import csv
 import io
 
 import pandas as pd
+
 from products.models import Dealer, DealerPrice, Product
 
 ITEMS_IN_MARKETING_DEALERPRICE = 7
@@ -82,7 +83,7 @@ def import_prices_from_csv(path_to_csv):
                         dealer_id=dealers_dict[int(dealer_id)]
                     )
                 )
-        DealerPrice.objects.bulk_create(prices_list)
+        DealerPrice.objects.bulk_create(prices_list, ignore_conflicts=True)
 
 
 def export_model_to_csv(model):
@@ -131,7 +132,8 @@ def export_db_to_csv(model, file_path):
     headers = [field.name for field in model._meta.fields]
 
     # Создаем DataFrame из данных модели
-    data = [[getattr(row, field) for field in headers] for row in model.objects.all()]
+    data = [[getattr(row, field) for field in headers]
+            for row in model.objects.all()]
     df = pd.DataFrame(data, columns=headers)
 
     # Сохраняем DataFrame в CSV файл
