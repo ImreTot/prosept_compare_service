@@ -1,4 +1,4 @@
-from datetime import timedelta, datetime
+from datetime import timedelta
 from django.shortcuts import render
 from django.db import transaction
 from django.db.models import Count
