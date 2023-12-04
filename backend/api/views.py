@@ -254,22 +254,35 @@ class MarkupProductView(View):
 
         if markup_request_form.is_valid():
             key = markup_request_form.cleaned_data['key']
-            markup_count = ProductDealerKey.objects.filter(product=product).count()
-                                    
-            # Увеличиваем счетчик для новой разметки
-            product_dealer_key = ProductDealerKey.objects.create(key=key, product=product, order=markup_count + 1)
-
+            # Получаем уже размеченные варианты
+            marked_options = ProductDealerKey.objects.filter(product=product)
+            
+            # Если есть размеченные варианты
+            if marked_options.exists():
+                # Проверяем, выбран ли вариант
+                selected_option = marked_options.filter(key=key).first()
+                
+                if selected_option:
+                    # Если выбран тот же вариант, что и ранее, снимаем выбор
+                    selected_option.delete()
+                else:
+                    # Если выбран новый вариант, заменяем предыдущий
+                    marked_options.update(key=None)
+                    ProductDealerKey.objects.create(key=key, product=product, order=marked_options.count() + 1)
+            else:
+                # Если нет размеченных вариантов, просто создаем новый
+                ProductDealerKey.objects.create(key=key, product=product, order=1)
+            
             # Сохраняем статистику выбора варианта
             choice_statistics = Statistics.objects.create(
                 product=product,
-                chosen_option_order=markup_count + 1,
-        )
+                chosen_option_order=marked_options.count() + 1,
+            )
             response_data = {
                 "message": f"Разметка товара {product_id} завершена",
-                "markup_id": product_dealer_key.id,
                 "choice_statistics": choice_statistics.id
             }
-            
+
             # Получаем следующий неразмеченный продукт
             next_unmarked_product = Product.objects.filter(is_matched=False).first()
 
