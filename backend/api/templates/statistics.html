@@ -12,7 +12,7 @@
       margin: 0;
       padding: 0;
     }
-
+ 
     .container {
       max-width: auto;
       margin: 20px auto;
@@ -22,7 +22,7 @@
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       overflow: hidden;
     }
-
+ 
     .options-table {
       width: 100%;
       border-collapse: collapse;
@@ -33,22 +33,37 @@
       overflow: auto;
       background-color: #fff;
     }
-
+ 
     .options-table th, .options-table td {
       padding: 12px;
       text-align: left;
       border-bottom: 1px solid #ddd;
       white-space: nowrap;
     }
-
+ 
     .options-table th {
       background-color: darkcyan;
       color: #fff;
     }
   </style>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 </head>
 <body>
   <div class="container">
+    <!-- Добавляем выпадающие списки перед таблицей -->
+    <label for="dealerFilter">Выберите дилера:</label>
+    <select id="dealerFilter">
+      <option value="all">Все</option>
+      <option value="Дилер1">Дилер1</option>
+      <option value="Дилер2">Дилер2</option>
+    </select>
+
+    <label for="categoryFilter">Выберите категорию:</label>
+    <select id="categoryFilter">
+      <option value="all">Все</option>
+      <!-- Добавьте ваши категории здесь -->
+    </select>
+
     <!-- Таблица статистики по вариантам -->
     <h2>Статистика по вариантам</h2>
     <table class="options-table">
@@ -82,5 +97,58 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Добавляем скрипт с фильтрацией перед закрывающим тегом </body> -->
+  <script>
+    $(document).ready(function () {
+      $('.options-table th').click(function () {
+        var table = $(this).parents('table').eq(0);
+        var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+        this.asc = !this.asc;
+        if (!this.asc) {
+          rows = rows.reverse();
+        }
+        for (var i = 0; i < rows.length; i++) {
+          table.append(rows[i]);
+        }
+      });
+
+      $('#dealerFilter, #categoryFilter').change(function () {
+        applyFilters();
+      });
+
+      function applyFilters() {
+        var dealerFilterValue = $('#dealerFilter').val();
+        var categoryFilterValue = $('#categoryFilter').val();
+
+        $('.options-table tbody tr').hide();
+
+        if (dealerFilterValue === 'all' && categoryFilterValue === 'all') {
+          $('.options-table tbody tr').show();
+        } else {
+          $('.options-table tbody tr').each(function () {
+            var dealer = $(this).find('td:first').text();
+            var category = ""; // Замените на код, чтобы получить значение категории
+
+            if ((dealerFilterValue === 'all' || dealer === dealerFilterValue) &&
+                (categoryFilterValue === 'all' || category === categoryFilterValue)) {
+              $(this).show();
+            }
+          });
+        }
+      }
+
+      function comparer(index) {
+        return function (a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().localeCompare(valB);
+        };
+      }
+
+      function getCellValue(row, index) {
+        return $(row).children('td').eq(index).text();
+      }
+    });
+  </script>
 </body>
 </html>
