@@ -21,14 +21,17 @@ from .serializers import (DealerPriceSerializer, DealerSerializer,
 class DealerListCreateView(viewsets.ModelViewSet):
     queryset = Dealer.objects.all()
     serializer_class = DealerSerializer
+    
 
 class ProductListCreateView(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
 
+
 class DealerPriceListCreateView(viewsets.ModelViewSet):
     queryset = DealerPrice.objects.all()
     serializer_class = DealerPriceSerializer
+
 
 class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
     queryset = ProductDealerKey.objects.all()
@@ -216,6 +219,7 @@ class MarkupProductView(View):
     """
     Представление для разметки товара.
     """
+
     template_name = 'заменить на будущий путь шаблона.html'  # Шаблон для режима разметки
 
     def get(self, request, product_id, *args, **kwargs):
@@ -282,6 +286,7 @@ class StatisticsView(View):
     """
     Представление для работы со статистикой.
     """
+    
     template_name = 'statistics.html'
 
     def get(self, request, *args, **kwargs):
