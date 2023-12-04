@@ -170,19 +170,22 @@ class MainView(View):
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         action = request.POST.get('action')
+        product_id = request.POST.get('product_id')
         
         if action == 'Да':
-            # Обработка "Да"
-            # Добавить логику для "Да"
-            return JsonResponse({"message": "Да"})
+            product = get_object_or_404(Product, id=product_id)
+            product.is_matched = True
+            product.save()
+            return JsonResponse({"message": f"Продукт {product_id} подтвержден"})
         elif action == 'Нет':
-            # Обработка "Нет"
-            # Добавить логику для "Нет"
-            return JsonResponse({"message": "Нет"})
+            product = get_object_or_404(Product, id=product_id)
+            product.is_matched = False
+            product.save()
+            return JsonResponse({"message": f"Продукт {product_id} не подтвержден"})
         elif action == 'Сопоставить':
-            # Обработка "Сопоставить"
-            # Добавить логику для "Сопоставить"
-            return JsonResponse({"message": "Сопоставить"})
+            product = get_object_or_404(Product, id=product_id)
+            matching_options_url = reverse('matching_options', args=[product_id])
+            return JsonResponse({"message": f"Сопоставление продукта {product_id}", "matching_options_url": matching_options_url})
         else:
             return JsonResponse({"error": "Неверное действие"}, status=400) # На случай возможных изменений в коде
     
@@ -257,11 +260,20 @@ class MarkupProductView(View):
                 product=product,
                 chosen_option_order=markup_count + 1,
         )
-            return JsonResponse({
-            "message": f"Разметка товара {product_id} завершена",
-            "markup_id": product_dealer_key.id,
-            "choice_statistics": choice_statistics.id  # или используйте другой способ идентификации
-            })
+            response_data = {
+                "message": f"Разметка товара {product_id} завершена",
+                "markup_id": product_dealer_key.id,
+                "choice_statistics": choice_statistics.id
+            }
+            
+            # Получаем следующий неразмеченный продукт
+            next_unmarked_product = Product.objects.filter(is_matched=False).first()
+
+            if next_unmarked_product:
+                # Если есть следующий неразмеченный продукт, добавляем его информацию в ответ
+                response_data["next_unmarked_product_id"] = next_unmarked_product.id
+
+            return JsonResponse(response_data)
         else:
             return JsonResponse({"error": "Неверные данные формы"}, status=400)
 
