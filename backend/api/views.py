@@ -198,7 +198,7 @@ class MatchingOptionsView(View):
     Представление для получения вариантов соответствия товара.
     """
 
-    def get(self, request, product_id, *args, **kwargs):
+    def get(self, product_id):
         """
         Обработчик GET-запроса для получения вариантов соответствия товара.
 
@@ -222,7 +222,7 @@ class MarkupProductView(View):
 
     template_name = 'заменить на будущий путь шаблона.html'  # Шаблон для режима разметки
 
-    def get(self, request, product_id, *args, **kwargs):
+    def get(self, product_id):
         """
         Обработчик GET-запроса для отображения сохраненной разметки товара.
 
@@ -243,7 +243,7 @@ class MarkupProductView(View):
             return JsonResponse({"product_id": product_id, "marked": False})
 
     @transaction.atomic
-    def post(self, request, product_id, *args, **kwargs):
+    def post(self, request, product_id):
         """
         Обработчик POST-запроса для разметки товара.
 
