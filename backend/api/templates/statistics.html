@@ -1,3 +1,6 @@
+{% load static %}
+{% load filters %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,22 +50,27 @@
     }
   </style>
   <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="{% static 'custom_filters.js' %}"></script>
 </head>
 <body>
   <div class="container">
-    <!-- Добавляем выпадающие списки перед таблицей -->
+    <!-- Выпадающие списки перед таблицей -->
     <label for="dealerFilter">Выберите дилера:</label>
     <select id="dealerFilter">
       <option value="all">Все</option>
-      <option value="Дилер1">Дилер1</option>
-      <option value="Дилер2">Дилер2</option>
+      {% for dealer in dealers %}
+        <option value="{{ dealer.name }}">{{ dealer.name }}</option>
+      {% endfor %}
     </select>
 
     <label for="categoryFilter">Выберите категорию:</label>
     <select id="categoryFilter">
       <option value="all">Все</option>
-      <!-- Добавьте ваши категории здесь -->
+      {% for category in categories %}
+        <option value="{{ category.category_id }}">{{ category.category_id }}</option>
+      {% endfor %}
     </select>
+    </div>
 
     <!-- Таблица статистики по вариантам -->
     <h2>Статистика по вариантам</h2>
@@ -76,29 +84,25 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Дилер1</td>
-          <td>Количество: {{ matched_dealer1_quantity }}, %: {{ matched_dealer1_percentage }}</td>
-          <td>Количество: {{ unmatched_dealer1_quantity }}, %: {{ unmatched_dealer1_percentage }}</td>
-          <td>Количество: {{ not_found_dealer1_quantity }}, %: {{ not_found_dealer1_percentage }}</td>
-        </tr>
-        <tr>
-          <td>Дилер2</td>
-          <td>Количество: {{ matched_dealer2_quantity }}, %: {{ matched_dealer2_percentage }}</td>
-          <td>Количество: {{ unmatched_dealer2_quantity }}, %: {{ unmatched_dealer2_percentage }}</td>
-          <td>Количество: {{ not_found_dealer2_quantity }}, %: {{ not_found_dealer2_percentage }}</td>
-        </tr>
-        <tr>
+        {% for dealer in dealers %}
+          <tr data-category="{{ dealer.id }}">
+            <td>{{ dealer.name }}</td>
+            <td>Количество: {{ matched_quantity|get_item:dealer.id }}<br>%: {{ matched_percentage|get_item:dealer.id }}</td>
+            <td>Количество: {{ unmatched_quantity|get_item:dealer.id }}<br>%: {{ unmatched_percentage|get_item:dealer.id }}</td>
+            <td>Количество: {{ not_found_quantity|get_item:dealer.id }}<br>%: {{ not_found_percentage|get_item:dealer.id }}</td>
+          </tr>
+        {% endfor %}
+        <tr data-category="all">
           <td>Все</td>
-          <td>Количество: {{ total_matched_quantity }}, %: {{ total_matched_percentage }}</td>
-          <td>Количество: {{ total_unmatched_quantity }}, %: {{ total_unmatched_percentage }}</td>
-          <td>Количество: {{ total_not_found_quantity }}, %: {{ total_not_found_percentage }}</td>
+          <td>Количество: {{ total_matched_quantity }}<br>%: {{ total_matched_percentage }}</td>
+          <td>Количество: {{ total_unmatched_quantity }}<br>%: {{ total_unmatched_percentage }}</td>
+          <td>Количество: {{ total_not_found_quantity }}<br>%: {{ total_not_found_percentage }}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- Добавляем скрипт с фильтрацией перед закрывающим тегом </body> -->
+  <!-- Скрипт с фильтрацией перед закрывающим тегом </body> -->
   <script>
     $(document).ready(function () {
       $('.options-table th').click(function () {
@@ -128,7 +132,7 @@
         } else {
           $('.options-table tbody tr').each(function () {
             var dealer = $(this).find('td:first').text();
-            var category = ""; // Замените на код, чтобы получить значение категории
+            var category = $(this).data('category');
 
             if ((dealerFilterValue === 'all' || dealer === dealerFilterValue) &&
                 (categoryFilterValue === 'all' || category === categoryFilterValue)) {

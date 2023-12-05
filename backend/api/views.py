@@ -352,6 +352,10 @@ class StatisticsView(View):
         # Статистика по тому, как часто ни один вариант не выбран за выбранный период
         none_chosen_count = chosen_options_stats.filter(chosen_option_count=0).count()
 
+        # Получаем дилеров и категории
+        dealers = Dealer.objects.all()
+        categories = Product.objects.values('category_id').distinct()
+
         # Сериализация статистики
         statistics_data = Statistics.objects.all()
         statistics_serialized = StatisticsSerializer(statistics_data, many=True).data
@@ -364,6 +368,8 @@ class StatisticsView(View):
             'chosen_options_stats': chosen_options_stats_list,
             'choices_order': choices_order_list,
             'none_chosen_count': none_chosen_count,
+            'dealers': dealers,
+            'categories': categories,
         }
 
         # Сохранение статистики в базе данных
