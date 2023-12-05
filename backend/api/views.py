@@ -171,7 +171,7 @@ class MainView(View):
         })
     
     @transaction.atomic
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         action = request.POST.get('action')
         product_id = request.POST.get('product_id')
         
@@ -302,7 +302,7 @@ class StatisticsView(View):
     
     template_name = 'statistics.html'
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request):
         # Получаем начальную и конечную дату из запроса
         start_date_str = request.GET.get('start_date')
         end_date_str = request.GET.get('end_date')
