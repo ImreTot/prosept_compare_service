@@ -46,7 +46,11 @@ def clean_string(input_string: str) -> str:
     input_string = re.sub(DROP_BRACKET, ' ', input_string) # убираем '(',')'
     input_string = input_string.replace('prosept', '').replace('просепт', '') # убираем название фирмы
     input_string = re.sub(DROP_SYMBOL, ' ', input_string)
-    output_string = re.sub(DUP_SPACES, r'\1', input_string) # обработка двойных пробелов
+         
+    input_string = ' '.join(re.split('(\d+|для|средство|удаления|мытья|био|эконом|декоративный|антисептик|мыло|ultra)', input_string))
+
+    input_string = re.sub(DUP_SPACES, r'\1', input_string) # обработка двойных пробелов
+    input_string = re.sub(r'[^а-яa-z0-9]+', ' ', input_string)
     return output_string
 
 # функция для получения эмбеддингов
@@ -125,7 +129,7 @@ def result(marketing_product_csv: io.TextIOBase,
     marketing_dealerprice_df['product_name'] = marketing_dealerprice_df['product_name'].astype('str').apply(clean_string)
     
     # embedding product
-    products_embedding = marketing_product_df['name'].apply(sentence_embedding)
+    products_embedding = pd.Series(np.load('embeddings.npy'), allow_pickle=True))
     
     # predict
     rez = marketing_dealerprice_df.set_index('product_url')['product_name'].apply(lambda x: rank_products(x, 
