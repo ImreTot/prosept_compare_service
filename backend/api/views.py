@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.shortcuts import render
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
@@ -304,8 +304,8 @@ class StatisticsView(View):
 
     def get(self, request, *args, **kwargs):
         # Получаем начальную и конечную дату из запроса
-        start_date_str = self.request.GET.get('start_date')
-        end_date_str = self.request.GET.get('end_date')
+        start_date_str = request.GET.get('start_date')
+        end_date_str = request.GET.get('end_date')
 
         # Используем даты из запроса или значения по умолчанию
         if not start_date_str or not end_date_str:
@@ -349,7 +349,7 @@ class StatisticsView(View):
         chosen_options_stats_list = list(chosen_options_stats)
         choices_order_list = list(choices_order)
 
-        # Статистика по тому, как часто ни один вариант не выбран за выбранный период
+        # Статистика по тому, как часто ни один вариант не выбран
         none_chosen_count = chosen_options_stats.filter(chosen_option_count=0).count()
 
         # Получаем дилеров и категории
@@ -381,5 +381,63 @@ class StatisticsView(View):
             choices_order=choices_order_list,
             chosen_options_stats=chosen_options_stats_list,
         )
+
+        return render(request, self.template_name, context)
+
+
+class VariantStatisticsView(View):
+    """
+    Представление для статистики по номеру варианта.
+    """
+
+    template_name = 'variant_statistics.html'
+
+    def get(self, request):
+        # Логика для получения статистики по порядковому номеру выбора и невыбранным вариантам
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+
+        # Ваша логика для фильтрации ProductDealerKey и сбора статистики
+        # Пример:
+        chosen_options_stats = ProductDealerKey.objects.filter(
+            marking_date__range=[start_date, end_date]
+        ).values(
+            'choices_order', 'product_id', 'dealer_id', 'product_id__category_id'
+        ).annotate(
+            choices_count=Count('choices_order'),
+            chosen_option_count=Count('id', filter=~Q(key=None)),
+        ).order_by('choices_order')
+
+        # Счетчик для порядкового номера выбора вариантов
+        choices_counter = 1
+
+        # Присвоение порядкового номера выбора вариантов
+        for stat in chosen_options_stats:
+            stat['choices_order'] = choices_counter
+            choices_counter += 1
+
+        # Преобразование QuerySet в список для сохранения в модель
+        chosen_options_stats_list = list(chosen_options_stats)
+
+        # Статистика по тому, как часто ни один вариант не выбран за выбранный период
+        none_chosen_count = chosen_options_stats.filter(chosen_option_count=0).count()
+
+        # Получаем дилеров и категории
+        dealers = Dealer.objects.all()
+        categories = Product.objects.values('category_id').distinct()
+
+        # Сериализация статистики
+        statistics_data = Statistics.objects.all()
+        statistics_serialized = StatisticsSerializer(statistics_data, many=True).data
+
+        context = {
+            'statistics': statistics_serialized,
+            'start_date': start_date.strftime("%Y-%m-%d") if start_date else None,
+            'end_date': end_date.strftime("%Y-%m-%d") if end_date else None,
+            'chosen_options_stats': chosen_options_stats_list,
+            'none_chosen_count': none_chosen_count,
+            'dealers': dealers,
+            'categories': categories,
+        }
 
         return render(request, self.template_name, context)

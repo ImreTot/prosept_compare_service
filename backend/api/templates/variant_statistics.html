@@ -1,0 +1,163 @@
+{% load static %}
+{% load filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Статистика и отчетность</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f0f0f0;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+ 
+    .container {
+      max-width: auto;
+      margin: 20px auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+ 
+    .options-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      overflow: auto;
+      background-color: #fff;
+    }
+ 
+    .options-table th, .options-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+      white-space: nowrap;
+    }
+ 
+    .options-table th {
+      background-color: darkcyan;
+      color: #fff;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Выпадающие списки перед таблицей -->
+    <label for="dealerFilter">Выберите дилера:</label>
+    <select id="dealerFilter">
+      <option value="all">Все</option>
+      {% for dealer in dealers %}
+        <option value="{{ dealer.name }}">{{ dealer.name }}</option>
+      {% endfor %}
+    </select>
+
+    <label for="categoryFilter">Выберите категорию:</label>
+    <select id="categoryFilter">
+      <option value="all">Все</option>
+      {% for category in categories %}
+        <option value="{{ category.category_id }}">{{ category.category_id }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <!-- Таблица статистики по вариантам -->
+  <h2>Статистика по номеру выбранного варианта</h2>
+  <p>Число случаев, когда ни один вариант не был выбран: {{ none_chosen_count }}</p>
+  <table class="options-table">
+    <thead>
+      <tr>
+        <th>Дилер</th>
+        <th>Выбор 1</th>
+        <th>Выбор 2</th>
+        <th>Выбор 3</th>
+        <th>Выбор 4</th>
+        <th>Выбор 5</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for dealer in dealers %}
+        <tr data-category="{{ dealer.id }}">
+          <td>{{ dealer.name }}</td>
+          <td>{{ choice1|get_item:dealer.id }}</td>
+          <td>{{ choice2|get_item:dealer.id }}</td>
+          <td>{{ choice3|get_item:dealer.id }}</td>
+          <td>{{ choice4|get_item:dealer.id }}</td>
+          <td>{{ choice5|get_item:dealer.id }}</td>
+        </tr>
+      {% endfor %}
+      <tr data-category="all">
+        <td>Все</td>
+        <td>{{ total_choice1 }}</td>
+        <td>{{ total_choice2 }}</td>
+        <td>{{ total_choice3 }}</td>
+        <td>{{ total_choice4 }}</td>
+        <td>{{ total_choice5 }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Скрипт с фильтрацией перед закрывающим тегом </body> -->
+  <script>
+    $(document).ready(function () {
+      $('.options-table th').click(function () {
+        var table = $(this).parents('table').eq(0);
+        var rows = table.find('tr:gt(0)').toArray().sort(comparer($(this).index()));
+        this.asc = !this.asc;
+        if (!this.asc) {
+          rows = rows.reverse();
+        }
+        for (var i = 0; i < rows.length; i++) {
+          table.append(rows[i]);
+        }
+      });
+
+      $('#dealerFilter, #categoryFilter').change(function () {
+        applyFilters();
+      });
+
+      function applyFilters() {
+        var dealerFilterValue = $('#dealerFilter').val();
+        var categoryFilterValue = $('#categoryFilter').val();
+
+        $('.options-table tbody tr').hide();
+
+        if (dealerFilterValue === 'all' && categoryFilterValue === 'all') {
+          $('.options-table tbody tr').show();
+        } else {
+          $('.options-table tbody tr').each(function () {
+            var dealer = $(this).find('td:first').text();
+            var category = $(this).data('category');
+
+            if ((dealerFilterValue === 'all' || dealer === dealerFilterValue) &&
+                (categoryFilterValue === 'all' || category === categoryFilterValue)) {
+              $(this).show();
+            }
+          });
+        }
+      }
+
+      function comparer(index) {
+        return function (a, b) {
+          var valA = getCellValue(a, index), valB = getCellValue(b, index);
+          return $.isNumeric(valA) && $.isNumeric(valB) ? valA - valB : valA.toString().localeCompare(valB);
+        };
+      }
+
+      function getCellValue(row, index) {
+        return $(row).children('td').eq(index).text();
+      }
+    });
+  </script>
+</body>
+</html>

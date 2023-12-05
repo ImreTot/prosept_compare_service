@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (DealerListCreateView, DealerPriceListCreateView,
                     LoadDataView, MainView, MarkupProductView,
                     MatchingOptionsView, ProductDealerKeyListCreateView,
-                    ProductListCreateView, StatisticsView)
+                    ProductListCreateView, StatisticsView, VariantStatisticsView)
 
 # Создаем роутер
 router = DefaultRouter()
@@ -19,5 +19,6 @@ urlpatterns = [
     path('matching_options/<int:product_id>/', MatchingOptionsView.as_view(), name='matching_options'),
     path('markup_product/<int:product_id>/', MarkupProductView.as_view(), name='markup_product'),
     path('statistics/', StatisticsView.as_view(), name='statistics'),
+    path('variant_statistics/', VariantStatisticsView.as_view(), name='variant_statistics'),
     path('api/v1/', include(router.urls)),
 ]
