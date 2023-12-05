@@ -80,7 +80,7 @@ class MainView(View):
         dealer_ids = request.GET.getlist('dealers[]')
         num_matches = request.GET.get('num_matches')
 
-        # Логика для определения начальной и конечной даты, если не заданы
+        # Логика для определения начальной и конечной даты
         if not start_date or not end_date:
             end_date = timezone.now()
             start_date = end_date - timedelta(days=6)
@@ -179,16 +179,16 @@ class MainView(View):
             product = get_object_or_404(Product, id=product_id)
             product.is_matched = True
             product.save()
-            return JsonResponse({"message": f"Продукт {product_id} подтвержден"})
+            return JsonResponse({"message": f"Товар {product_id} подтвержден"})
         elif action == 'Нет':
             product = get_object_or_404(Product, id=product_id)
             product.is_matched = False
             product.save()
-            return JsonResponse({"message": f"Продукт {product_id} не подтвержден"})
+            return JsonResponse({"message": f"Товар {product_id} не подтвержден"})
         elif action == 'Сопоставить':
             product = get_object_or_404(Product, id=product_id)
             matching_options_url = reverse('matching_options', args=[product_id])
-            return JsonResponse({"message": f"Сопоставление продукта {product_id}", "matching_options_url": matching_options_url})
+            return JsonResponse({"message": f"Сопоставление товара {product_id}", "matching_options_url": matching_options_url})
         else:
             return JsonResponse({"error": "Неверное действие"}, status=400) # На случай возможных изменений в коде
     
@@ -283,11 +283,11 @@ class MarkupProductView(View):
                 "choice_statistics": choice_statistics.id
             }
 
-            # Получаем следующий неразмеченный продукт
+            # Получаем следующий неразмеченный товар
             next_unmarked_product = Product.objects.filter(is_matched=False).first()
 
             if next_unmarked_product:
-                # Если есть следующий неразмеченный продукт, добавляем его информацию в ответ
+                # Если есть следующий неразмеченный товар, добавляем его информацию в ответ
                 response_data["next_unmarked_product_id"] = next_unmarked_product.id
 
             return JsonResponse(response_data)
