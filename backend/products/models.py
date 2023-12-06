@@ -15,7 +15,7 @@ class Product(models.Model):
     """
     Модель данных для таблицы 'marketing_product'.
     """
-    article = models.CharField(max_length=100)
+    article = models.CharField(max_length=100, primary_key=True)
     ean_13 = models.FloatField(null=True)
     name = models.CharField(max_length=250)
     cost = models.FloatField(null=True)
@@ -39,7 +39,7 @@ class DealerPrice(models.Model):
     """
     product_key = models.IntegerField(null=True)
     price = models.FloatField(null=True)
-    product_url = models.URLField(unique=True)
+    product_url = models.URLField(unique=True, primary_key=True)
     product_name = models.CharField(max_length=250)
     date = models.DateField()
     dealer_id = models.ForeignKey(Dealer,
@@ -53,18 +53,16 @@ class DealerPrice(models.Model):
 
 class ProductDealerKey(models.Model):
     """
-    Модель данных для таблицы 'marketing_productdealerkey'.
+    Модель данных, связывающая DealerPrice c Product.
+    Заполняется данными, возвращенными ML.
     """
     key = models.ForeignKey(DealerPrice,
-                            related_name='matching_product',
+                            related_name='matching_products',
                             on_delete=models.CASCADE)
-    dealer_id = models.ForeignKey(Dealer,
-                                  related_name='products',
-                                  on_delete=models.CASCADE)
     product_id = models.ForeignKey(Product,
                                    related_name='product_dealer_keys',
                                    on_delete=models.CASCADE)
-    compliance_percentage = models.PositiveSmallIntegerField()
+    compliance_number = models.PositiveSmallIntegerField()
 
     def __str__(self):
-        return f"ProductDealerKey {self.id} for Product {self.product_id}"
+        return f'ProductDealerKey {self.id} for Product {self.product_id}'

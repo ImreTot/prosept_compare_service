@@ -1,4 +1,6 @@
+import json
 from datetime import datetime, timedelta
+import os
 
 from django.db import transaction
 from django.db.models import Case, CharField, Count, F, Value, When
@@ -9,12 +11,28 @@ from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from rest_framework import viewsets
+from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
 
 from products.models import Dealer, DealerPrice, Product, ProductDealerKey
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
                           ProductDealerKeySerializer, ProductSerializer)
+from tools.import_csv import (import_dealers_from_csv,
+                              import_products_from_csv,
+                              import_prices_from_csv,
+                              export_model_to_csv_binary,
+                              save_json)
+from ML.main_script import result
+
+NUMBERS_OF_FILES = 3
+AMOUNT_RESULT = 10
+DEALER_FILE = 'marketing_dealer.csv'
+PRODUCT_FILE = 'marketing_product.csv'
+PRICES_FILE = 'marketing_dealerprice.csv'
 
 
 class DealerListCreateView(viewsets.ModelViewSet):
@@ -34,18 +52,74 @@ class ProductDealerKeyListCreateView(viewsets.ModelViewSet):
     serializer_class = ProductDealerKeySerializer
 
 
-class LoadDataView(View):
+class LoadDataView(APIView):
     """
     Представление для загрузки данных.
+    В теле запроса приходят три файла:
+    - marketing_dealer.csv
+    - marketing_product.csv
+    - marketing_dealerprice.csv
+    Класс сохраняет файлы локально в директорию 'data/temp_data/',
+    После вызывает функцию загрузки данных в БД.
     """
-
+    parser_classes = [MultiPartParser]
     def post(self, request, *args, **kwargs):
-        """
-        Обработчик POST-запроса для загрузки данных.
+        files = request.data.getlist('file')
 
-        Возвращает JsonResponse с информацией об успешной загрузке данных.
-        """
-        # Дописать
+        # Проверка, что переданы три файла csv
+        if len(files) != NUMBERS_OF_FILES:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # Сохранение файлов локально
+        save_path = 'data/temp_data/'
+        for file in files:
+            with open(os.path.join(save_path, file.name), 'wb') as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
+
+        # Импорт файлов в базу данных
+        try:
+            import_dealers_from_csv(os.path.join(save_path, DEALER_FILE))
+            import_products_from_csv(os.path.join(save_path, PRODUCT_FILE))
+            import_prices_from_csv(os.path.join(save_path, PRICES_FILE))
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # После импорта файлы удаляются
+        os.remove(os.path.join(save_path, DEALER_FILE))
+        os.remove(os.path.join(save_path, PRODUCT_FILE))
+        os.remove(os.path.join(save_path, PRICES_FILE))
+
+        # Экспорт очищенных файлов из базы данных в CSV
+        # и загрузка в предобученную модель
+        products_file = export_model_to_csv_binary(Product)
+        prices_file = export_model_to_csv_binary(DealerPrice)
+        ds_result = result(products_file,
+                           prices_file,
+                           AMOUNT_RESULT)
+
+        # Сохранение результата работы модели и создание записей в базе данных
+        json_file_path = 'data/temp_data/matching_prices.json'
+        save_json(json_data=ds_result,
+                  file_name=json_file_path)
+        with open(json_file_path, 'r') as file:
+            data = json.load(file)
+        dict_data = list(data.items())
+        os.remove(json_file_path)
+        prices_urls = {price.product_url: price for price in DealerPrice.objects.all()}
+        products_articles = {product.article: product for product in Product.objects.all()}
+        matching_data = []
+        for price in dict_data:
+            for count, product in enumerate(price[1]):
+                matching_data.append(
+                    ProductDealerKey(
+                        key=prices_urls[price[0]],
+                        product_id=products_articles[product],
+                        compliance_number=count
+                    )
+                )
+        ProductDealerKey.objects.bulk_create(matching_data)
+        return Response(status=status.HTTP_201_CREATED)
 
 
 class MainView(View):
