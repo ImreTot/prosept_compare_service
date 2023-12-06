@@ -15,6 +15,8 @@ tags:
     description: Данные об объявлениях продавцов
   - name: products
     description: Данные о продуктах, соответствующих объявлению
+  - name: download_data
+    description: Загрузка данных в БД
 paths:
   /dealers/:
     get:
@@ -49,6 +51,37 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/prices'
+        '400':
+          description: Неверные параметры запроса
+        '401':
+          description: Неавторизованный пользователь
+  /prices/{id}/:
+    get:
+      tags:
+        - prices
+      summary: Получить выбранное объявление дилера
+      description: В запросе передается ID объявления дилера. Возвращается массив с данными объявления.
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: ID
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/current_price'
+  /download_data/:
+    post:
+      tags:
+        - download_data
+      summary: Загрузить CSV-файлы в базу данных
+      description: Пользователь отправляет три CSV-файлы, которые содержат информацию о дилерах, объявлениях и продуктах производителя.
+      responses:
 components:
   schemas:
     dealers:

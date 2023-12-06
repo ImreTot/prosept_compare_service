@@ -1,14 +1,17 @@
 import csv
 import io
+import json
+from typing import Union, Type
 
 import pandas as pd
+from django.db.models import Model
 
 from products.models import Dealer, DealerPrice, Product
 
 ITEMS_IN_MARKETING_DEALERPRICE = 7
 
 
-def import_dealers_from_csv(path_to_csv):
+def import_dealers_from_csv(path_to_csv: str) -> None:
     """
     Функция принимает путь к csv-файлу со списком дилеров.
     На основе обработанных данных создаются записи в БД.
@@ -24,7 +27,7 @@ def import_dealers_from_csv(path_to_csv):
         Dealer.objects.bulk_create(dealer_list)
 
 
-def import_products_from_csv(path_to_csv):
+def import_products_from_csv(path_to_csv: str) -> None:
     """
     Функция принимает путь со списком продуктов производителя.
     На основе обработанных данных создаются записи в БД.
@@ -58,7 +61,7 @@ def import_products_from_csv(path_to_csv):
         Product.objects.bulk_create(products_list)
 
 
-def import_prices_from_csv(path_to_csv):
+def import_prices_from_csv(path_to_csv: str) -> None:
     """
     Функция принимает путь со списком объявлений дилеров.
     На основе обработанных данных создаются записи в БД.
@@ -86,7 +89,9 @@ def import_prices_from_csv(path_to_csv):
         DealerPrice.objects.bulk_create(prices_list, ignore_conflicts=True)
 
 
-def export_model_to_csv(model):
+def export_model_to_csv_binary(
+        model: Union[Type[DealerPrice], Type[Product]]
+) -> io.StringIO:
     # Открываем объект для записи CSV в памяти
     csv_buffer = io.StringIO()
     csv_writer = csv.writer(csv_buffer)
@@ -105,7 +110,7 @@ def export_model_to_csv(model):
     return csv_buffer
 
 
-def send_csv_to_model(file_path):
+def convert_csv_into_binary(file_path):
     # Открываем файл для чтения
     with open(file_path, 'r') as file:
         # Открываем объект для записи CSV в памяти
@@ -138,6 +143,12 @@ def export_db_to_csv(model, file_path):
 
     # Сохраняем DataFrame в CSV файл
     df.to_csv(file_path, index=False)
+
+
+def save_json(json_data: json, file_name: str) -> None:
+    json_str = json.dumps(json_data, indent=2, ensure_ascii=False)
+    with open(file_name, 'w', encoding='utf-8') as json_file:
+        json_file.write(json_data)
 
 
 # временные пути для файлов
