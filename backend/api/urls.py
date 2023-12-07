@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from .views import (DealerListCreateView, DealerPriceListCreateView,
                     LoadDataView, MainView, MarkupProductView,
                     MatchingOptionsView, ProductDealerKeyListCreateView,
-                    ProductListCreateView, StatisticsView, VariantStatisticsView)
+                    ProductListCreateView, StatisticsView,
+                    VariantStatisticsView)
 
 # Создаем роутер
 router = DefaultRouter()

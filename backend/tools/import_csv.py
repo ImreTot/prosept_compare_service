@@ -2,7 +2,6 @@ import csv
 import io
 
 import pandas as pd
-
 from products.models import Dealer, DealerPrice, Product
 
 ITEMS_IN_MARKETING_DEALERPRICE = 7

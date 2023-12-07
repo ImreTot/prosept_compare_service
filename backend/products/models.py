@@ -48,7 +48,7 @@ class DealerPrice(models.Model):
     marking_date = models.DateTimeField(null=True)
 
     def __str__(self):
-        return self.product_url
+        return f"{self.date:%Y-%m-%d}" if self.date else "Нет данных"
 
 
 class ProductDealerKey(models.Model):
