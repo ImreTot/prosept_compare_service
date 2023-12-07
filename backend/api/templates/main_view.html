@@ -108,6 +108,10 @@
         <button type="submit">Применить фильтр</button>
     </form>
 
+    <!-- Добавленные кнопки для перехода на страницы со статистикой -->
+    <a href="{% url 'statistics' %}"><button type="button">Статистика сопоставлений</button></a>
+    <a href="{% url 'variant_statistics' %}"><button type="button">Статистика вариантов</button></a>
+
     <!-- Таблица для отображения списка продуктов -->
     <table>
     <thead>
