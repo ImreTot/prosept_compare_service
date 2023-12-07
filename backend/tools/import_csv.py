@@ -1,7 +1,7 @@
 import csv
 import io
 import json
-from typing import Union, Type
+from typing import Type, Union
 
 import pandas as pd
 from django.db.models import Model

@@ -48,7 +48,7 @@ class DealerPrice(models.Model):
     marking_date = models.DateTimeField(null=True)
 
     def __str__(self):
-        return f"{self.date:%Y-%m-%d}" if self.date else "Нет данных"
+        return self.product_url
 
 
 class ProductDealerKey(models.Model):
@@ -62,20 +62,7 @@ class ProductDealerKey(models.Model):
     product_id = models.ForeignKey(Product,
                                    related_name='product_dealer_keys',
                                    on_delete=models.CASCADE)
-<<<<<<< HEAD
     compliance_number = models.PositiveSmallIntegerField()
 
     def __str__(self):
-        return f"ProductDealerKey {self.id} for Product {self.product_id}"
-    
-
-class Statistics(models.Model):
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
-    total_markup_count = models.IntegerField()
-    none_chosen_count = models.IntegerField()
-    choices_order = models.JSONField()
-    chosen_options_stats = models.JSONField()
-
-    def __str__(self):
-        return f"Statistics for {self.start_date} - {self.end_date}"
+        return f'ProductDealerKey {self.id} for Product {self.product_id}'
