@@ -1,0 +1,118 @@
+openapi: 3.0.3
+info:
+  title: Prosept API
+  description: |-
+    API сервиса сопоставления товаров и объявлений для компании Prosept.
+  version: 1.0.0
+servers:
+  - url: https://localhost:8000/api/v1
+tags:
+  - name: admin
+    description: Доступ в админку
+  - name: dealers
+    description: Данные о дилерах
+  - name: prices
+    description: Данные об объявлениях продавцов
+  - name: products
+    description: Данные о продуктах, соответствующих объявлению
+  - name: download_data
+    description: Загрузка данных в БД
+paths:
+  /dealers/:
+    get:
+      tags:
+        - dealers
+      summary: Получить список всех дилеров
+      description: Получить всех дилеров из БД
+      operationId: updatePet
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/dealers'
+        '400':
+          description: Invalid ID supplied
+        '404':
+          description: Pet not found
+        '405':
+          description: Validation exception
+  /prices/:
+    get:
+      tags:
+        - prices
+      summary: Получить список объявлений дилеров
+      description: В зависимости от переданных параметров возвращает либо все объявления, либо те, что соответствуют запросу.
+      responses:
+        '200':
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/prices'
+        '400':
+          description: Неверные параметры запроса
+        '401':
+          description: Неавторизованный пользователь
+  /prices/{id}/:
+    get:
+      tags:
+        - prices
+      summary: Получить выбранное объявление дилера
+      description: В запросе передается ID объявления дилера. Возвращается массив с данными объявления.
+      parameters:
+        - name: id
+          required: true
+          in: path
+          description: ID
+          schema:
+            type: string
+      responses:
+        200:
+          description: Успешный запрос
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/current_price'
+  /download_data/:
+    post:
+      tags:
+        - download_data
+      summary: Загрузить CSV-файлы в базу данных
+      description: Пользователь отправляет три CSV-файлы, которые содержат информацию о дилерах, объявлениях и продуктах производителя.
+      responses:
+components:
+  schemas:
+    dealers:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 10
+        name:
+          type: string
+          example: Ozon
+    prices:
+      type: object
+      properties:
+        product_key:
+          type: integer
+          format: int64
+          example: 10
+        price:
+          type: integer
+          format: int64
+          example: 360.0
+        product_url:
+          type: string
+          format: url
+          example: https://akson.ru//p/propitka_prosept_aquaisol_dlya_kamnya_kontsentrat_1_2_1l/
+        product_name:
+          type: string
+          example: Пропитка PROSEPT Aquaisol для камня, концентрат 1:2 1л
+        date:
+          type: string
+          format: date
+          example: 2023-07-11
