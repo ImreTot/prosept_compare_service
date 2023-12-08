@@ -5,7 +5,6 @@ from typing import Type, Union
 
 import pandas as pd
 from django.db.models import Model
-
 from products.models import Dealer, DealerPrice, Product
 
 ITEMS_IN_MARKETING_DEALERPRICE = 7
@@ -16,7 +15,7 @@ def import_dealers_from_csv(path_to_csv: str) -> None:
     Функция принимает путь к csv-файлу со списком дилеров.
     На основе обработанных данных создаются записи в БД.
     """
-    with open(path_to_csv, newline='') as csv_file:
+    with open(path_to_csv, newline='', encoding='utf-8') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=';')
         next(csv_reader)
         dealer_list = [
@@ -32,7 +31,7 @@ def import_products_from_csv(path_to_csv: str) -> None:
     Функция принимает путь со списком продуктов производителя.
     На основе обработанных данных создаются записи в БД.
     """
-    with open(path_to_csv, newline='') as csv_file:
+    with open(path_to_csv, newline='', encoding='utf-8') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=';')
         next(csv_reader)
         products_list = [
@@ -66,7 +65,7 @@ def import_prices_from_csv(path_to_csv: str) -> None:
     Функция принимает путь со списком объявлений дилеров.
     На основе обработанных данных создаются записи в БД.
     """
-    with open(path_to_csv, newline='') as csv_file:
+    with open(path_to_csv, newline='', encoding='utf-8') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=';')
         next(csv_reader)
         dealers_dict = {dealer.id: dealer for dealer in Dealer.objects.all()}

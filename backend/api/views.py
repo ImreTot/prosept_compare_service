@@ -1,26 +1,26 @@
 import json
 import os
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 
 from django.db import transaction
 from django.db.models import Count, Q
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.dateparse import parse_date
 from django.views import View
+from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
+                             Statistics)
 from rest_framework import status, viewsets
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from ML.main_script import result
-from products.models import (Dealer, DealerPrice, Product, ProductDealerKey,
-                             Statistics)
 from tools.import_csv import (export_model_to_csv_binary,
                               import_dealers_from_csv, import_prices_from_csv,
                               import_products_from_csv, save_json)
+
+from ML.main_script import result
 
 from .forms import MarkupRequestForm
 from .serializers import (DealerPriceSerializer, DealerSerializer,
@@ -125,6 +125,10 @@ class LoadDataView(APIView):
                 )
         ProductDealerKey.objects.bulk_create(matching_data)
         return Response(status=status.HTTP_201_CREATED)
+    
+    def get(self, request, *args, **kwargs):
+        # обработка GET запроса
+        return Response(status=status.HTTP_200_OK)
 
 
 class MainView(View):
@@ -142,13 +146,11 @@ class MainView(View):
     POST-запрос:
     - Параметры запроса:
       - action: Действие ('Да', 'Нет' или 'Сопоставить').
-      - product_id: Идентификатор продукта.
+      - product_id: Идентификатор товара.
     
     Возвращает JsonResponse со списком товаров, в том числе удовлетворяющих заданным критериям фильтрации,
     а также предоставляет количество совпадений в соответствии с параметром num_matches.
     """
-
-    template_name = 'main_view.html'
 
     def get(self, request, *args, **kwargs):
         start_date = request.GET.get('start_date')
@@ -157,34 +159,69 @@ class MainView(View):
         dealer_ids = request.GET.getlist('dealers[]')
         num_matches = request.GET.get('num_matches')
 
+        # Логика для определения начальной и конечной даты, если не заданы
+        if not start_date or not end_date:
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=6)
+
+        if not isinstance(start_date, timezone.datetime):
+            """
+            Если начальная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
+
+            Параметры:
+            - start_date (str или datetime): Начальная дата фильтрации.
+
+            Результат:
+            - start_date преобразуется в объект datetime, если она не является таковым.
+            """
+            start_date = parse_date(start_date)
+
+        if not isinstance(end_date, timezone.datetime):
+            """
+            Если конечная дата не является экземпляром datetime, преобразует её из строки в объект datetime.
+
+            Параметры:
+            - end_date (str или datetime): Конечная дата фильтрации.
+
+            Результат:
+            - end_date преобразуется в объект datetime, если она не является таковым.
+            """
+            end_date = parse_date(end_date)
+
         # Дополнительная фильтрация по dealer_ids
-        dealer_filter = {}
         if dealer_ids:
-            dealer_filter['dealer__id__in'] = dealer_ids
-
-        # Получение списка продавцов
-        dealers = Dealer.objects.filter(**dealer_filter)
-
-        # Фильтрация по дате
-        date_filter = {}
-
-        # Фильтрация по статусу
-        status_filter_query = Q()
+            dealer_filter = {'dealer__id__in': dealer_ids}
+        else:
+            dealer_filter = {}
 
         if status_filter:
-            if status_filter == 'matched':
-                status_filter_query &= Q(product_dealer_keys__isnull=False)
-            elif status_filter == 'unmatched':
-                status_filter_query &= Q(product_dealer_keys__isnull=True)
+            """
+            Если параметр status_filter задан, устанавливает фильтр по статусу товаров.
 
-        # Объединяем все фильтры
-        all_filters = Q(**date_filter) & status_filter_query
-        products_info_objects = Product.objects.filter(all_filters).distinct()
+            Параметры:
+            - status_filter (str): Фильтр по статусу ('matched' или 'unmatched').
+
+            Действия:
+            - Если status_filter равен 'matched', фильтрует товары, у которых имеются соответствия.
+            - Если status_filter равен 'unmatched', фильтрует товары, у которых нет соответствий.
+
+            Результат:
+            - dealer_filter обновляется в соответствии с заданным статусом для последующего использования
+            в фильтрации товаров.
+            """
+            
+            if status_filter == 'matched':
+                dealer_filter['product_dealer_keys__isnull'] = False
+            elif status_filter == 'unmatched':
+                dealer_filter['product_dealer_keys__isnull'] = True
+
+        # Получение списка товаров из базы данных
+        products_info_objects = Product.objects.filter(**dealer_filter)
 
         # Сериализация данных о товарах
         products_info_serialized = ProductSerializer(products_info_objects, many=True).data
 
-        # Получение списка вариантов соответствия для каждого продукта
+        # Получение списка вариантов соответствия для каждого товара
         matching_options = []
         for product in products_info_objects:
             product_key = product.id
@@ -193,53 +230,43 @@ class MainView(View):
 
         # Логика для num_matches
         if num_matches:
+            # Ограничение количества вариантов соответствия в соответствии с параметром num_matches
             num_matches = int(num_matches)
             matching_options = matching_options[:num_matches]
 
         # Сериализация цен продавцов
-        dealer_prices = DealerPrice.objects.filter(dealer_id__in=dealers, **dealer_filter)
+        dealer_prices = DealerPrice.objects.filter(**dealer_filter)
         dealer_prices_serialized = DealerPriceSerializer(dealer_prices, many=True).data
 
         # Сериализация данных о продавцах
+        dealers = Dealer.objects.filter(**dealer_filter)
         dealers_serialized = DealerSerializer(dealers, many=True).data
 
-        return render(request, self.template_name, {
+        return JsonResponse({
             'products': products_info_serialized,
             'matching_options': matching_options,
             'dealer_prices': dealer_prices_serialized,
             'dealers': dealers_serialized,
-            'product_id': product_key,
         })
     
     @transaction.atomic
     def post(self, request, *args, **kwargs):
         action = request.POST.get('action')
-        product_id = request.POST.get('product_id')
-
-        try:
-            product_id = int(product_id)
-            product = get_object_or_404(Product, id=product_id)
-
-            if action == 'Да':
-                product.is_matched = True
-                product.save()
-                return render(request, self.template_name, {"message": f"Товар {product_id} подтвержден"})
-            elif action == 'Нет':
-                product.is_matched = False
-                product.save()
-                return render(request, self.template_name, {"message": f"Товар {product_id} не подтвержден"})
-            elif action == 'Сопоставить':
-                try:
-                    dealer_price = DealerPrice.objects.get(product_key=product_id)
-                except DealerPrice.DoesNotExist:
-                    return JsonResponse({"error": "DealerPrice не найден для указанного product_key"}, status=400)
-    
-                matching_options_url = reverse('matching_options', args=[dealer_price.product_id_id])
-                return render(request, self.template_name, {"message": f"Сопоставление товара {product_id}", "matching_options_url": matching_options_url})
-            else:
-                return JsonResponse({"error": "Неверное действие"}, status=400)
-        except (ValueError, Product.DoesNotExist):
-            return JsonResponse({"error": "Invalid product ID"}, status=400)
+        
+        if action == 'Да':
+            # Обработка "Да"
+            # Добавить логику для "Да"
+            return JsonResponse({"message": "Да"})
+        elif action == 'Нет':
+            # Обработка "Нет"
+            # Добавить логику для "Нет"
+            return JsonResponse({"message": "Нет"})
+        elif action == 'Сопоставить':
+            # Обработка "Сопоставить"
+            # Добавить логику для "Сопоставить"
+            return JsonResponse({"message": "Сопоставить"})
+        else:
+            return JsonResponse({"error": "Неверное действие"}, status=400) # На случай возможных изменений в коде
     
 
 class MatchingOptionsView(View):
@@ -247,7 +274,7 @@ class MatchingOptionsView(View):
     Представление для получения вариантов соответствия товара.
     """
 
-    def get(self, product_id):
+    def get(self, request, product_id, *args, **kwargs):
         """
         Обработчик GET-запроса для получения вариантов соответствия товара.
 
@@ -260,12 +287,10 @@ class MatchingOptionsView(View):
         serialized_data = serializer.data
 
         return JsonResponse({"matching_options": serialized_data})
-        # Здесь добавить логику для предоставления вариантов соответствия (с использованием ML-модели)
             
     
 class MarkupProductView(View):
-    template_name = 'markup.html'
-
+    
     def get(self, request, product_id, *args, **kwargs):
         product = get_object_or_404(Product, id=product_id)
         product_dealer_key = product.product_dealer_keys.first()
@@ -305,8 +330,6 @@ class StatisticsView(View):
     Представление для работы со статистикой.
     """
     
-    template_name = 'statistics.html'
-
     def get(self, request):
         # Получаем начальную и конечную дату из запроса
         start_date_str = request.GET.get('start_date')
@@ -387,15 +410,13 @@ class StatisticsView(View):
             chosen_options_stats=chosen_options_stats_list,
         )
 
-        return render(request, self.template_name, context)
+        return JsonResponse(context)
 
 
 class VariantStatisticsView(View):
     """
     Представление для статистики по номеру варианта.
     """
-
-    template_name = 'variant_statistics.html'
 
     def get(self, request):
         # Логика для получения статистики по порядковому номеру выбора и невыбранным вариантам
@@ -445,4 +466,4 @@ class VariantStatisticsView(View):
             'categories': categories,
         }
 
-        return render(request, self.template_name, context)
+        return JsonResponse(context)
